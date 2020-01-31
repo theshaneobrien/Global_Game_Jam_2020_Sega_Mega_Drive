@@ -15,9 +15,11 @@ struct Player{
 
 struct Player player1;
 struct Player player2;
+struct Player players[2];
 
-int playerWidth = 32;
-int playerHeight = 38;
+const int playerWidth = 64;
+const int playerHeight = 64;
+
 bool jumping = FALSE;
 
 //Controller Vectors
@@ -25,12 +27,13 @@ int p1Horizontal = 0;
 int p1Vertical = 0;
 int p2Horizontal = 0;
 int p2Vertical = 0;
+const int groundHeight = 180;
 
 void init();
 void setupPlayField();
 void setupPlayers();
-
 void gravity();
+void setPlayerPosition();
 
 //Button Functions
 int p1PressedA();
@@ -52,9 +55,9 @@ int main()
 		//Updates Sprites Position / Animation Frame
 		SPR_update();
 		gravity();
+		setPlayerPosition();
 		//Wait for the frame to finish rendering
 		VDP_waitVSync();
-		
 	}
 	return(0);
 	
@@ -100,7 +103,17 @@ void setupPlayField()
 void setupPlayers()
 {
 	VDP_setPalette(PAL2, player1Sprite.palette->data);
-	player1.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player1.posX), player1.posY, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+
+	players[0] = player1;
+	players[1] = player2;
+
+	player1.posX = intToFix16(0);
+	player2.posX = intToFix16(256);
+	player1.posY = intToFix16(64 - playerHeight);
+	player2.posY = intToFix16(64 - playerHeight);
+
+	player1.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY), TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	player2.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player2.posX), fix16ToInt(player2.posY), TILE_ATTR(PAL2, 0, FALSE, TRUE));
 	SPR_update();
 }
 
@@ -108,26 +121,42 @@ void gravity()
 {
 	//Apply Velocity, need to use fix16Add to add two "floats" together
 	player1.posY = fix16Add(player1.posY, player1.VelY);
+	player2.posY = fix16Add(player2.posY, player2.VelY);
 
 	//Apply gravity
 	if (jumping == TRUE)
 	{
-		
 	}
 
 	//Check if player is on floor
-	if (fix16ToInt(player1.posY) + playerHeight >= 300)
+	if (fix16ToInt(player1.posY) + playerHeight >= groundHeight)
 	{
 		jumping = FALSE;
-	 	player1.VelY = FIX16(0);
-		player1.posY = intToFix16(testGroundCollision(0) - playerHeight);
-	 }
-	 else
-	 {
-		 player1.VelY  = fix16Add(player1.VelY, 6);
-	 }
+		player1.VelY = FIX16(0);
+		player1.posY = intToFix16(groundHeight - playerHeight);
+	}
+	else
+	{
+		player1.VelY = fix16Add(player1.VelY, 6);
+	}
+
+	if (fix16ToInt(player2.posY) + playerHeight >= groundHeight)
+	{
+		jumping = FALSE;
+		player2.VelY = FIX16(0);
+		player2.posY = intToFix16(groundHeight - playerHeight);
+	}
+	else
+	{
+		player2.VelY = fix16Add(player2.VelY, 6);
+	}
 }
 
+void setPlayerPosition()
+{
+	SPR_setPosition(player1.playerSprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY));
+	SPR_setPosition(player2.playerSprite, fix16ToInt(player2.posX), fix16ToInt(player2.posY));
+}
 
 //Input Stuff
 int p1PressedA()
