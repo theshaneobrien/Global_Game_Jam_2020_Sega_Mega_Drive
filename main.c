@@ -1,3 +1,11 @@
+#define START_BUTTON 1
+#define A_BUTTON 1
+#define B_BUTTON 1
+#define C_BUTTON 1
+
+#define PLAYER_1 1
+#define PLAYER_2 2
+
 #include <genesis.h>
 #include <resources.h>
 
@@ -10,7 +18,10 @@ struct Player{
 	fix16 posX;
 	fix16 velX;
 	fix16 posY;
-	fix16 VelY;
+	fix16 velY;
+	int horizontalNormal;
+	int verticalNormal;
+	bool jumping;
 };
 
 struct Player player1;
@@ -20,32 +31,21 @@ struct Player players[2];
 const int playerWidth = 64;
 const int playerHeight = 64;
 
-bool jumping = FALSE;
-
-//Controller Vectors
-int p1Horizontal = 0;
-int p1Vertical = 0;
-int p2Horizontal = 0;
-int p2Vertical = 0;
 const int groundHeight = 180;
 
 void init();
 void setupPlayField();
 void setupPlayers();
 void gravity();
+void playerJumping();
 void setPlayerPosition();
 
 //Button Functions
-int p1PressedA();
-int p1PressedB();
-int p1PressedC();
-int p1PressedStart();
-int p2PressedA();
-int p2PressedB();
-int p2PressedC();
-int p2PressedStart();
+int p1ButtonPressEvent(int button);
+int p2ButtonPressEvent(int button);
 
-static void myJoyHandler(u16 joy, u16 changed, u16 state);
+static void
+myJoyHandler(u16 joy, u16 changed, u16 state);
 
 int main()
 {
@@ -120,35 +120,51 @@ void setupPlayers()
 void gravity()
 {
 	//Apply Velocity, need to use fix16Add to add two "floats" together
-	player1.posY = fix16Add(player1.posY, player1.VelY);
-	player2.posY = fix16Add(player2.posY, player2.VelY);
-
-	//Apply gravity
-	if (jumping == TRUE)
-	{
-	}
+	player1.posY = fix16Add(player1.posY, player1.velY);
+	player1.posX = fix16Add(player1.posX, player1.velX);
+	player2.posY = fix16Add(player2.posY, player2.velY);
+	player2.posX = fix16Add(player2.posX, player2.velX);
 
 	//Check if player is on floor
 	if (fix16ToInt(player1.posY) + playerHeight >= groundHeight)
 	{
-		jumping = FALSE;
-		player1.VelY = FIX16(0);
+		player1.jumping = FALSE;
+		player1.velY = FIX16(0);
 		player1.posY = intToFix16(groundHeight - playerHeight);
+		player1.velX = intToFix16(0);
 	}
 	else
 	{
-		player1.VelY = fix16Add(player1.VelY, 6);
+		player1.velY = fix16Add(player1.velY, 6);
+		player1.velX = fix16Add(player1.velX, player1.horizontalNormal * 2);
 	}
 
 	if (fix16ToInt(player2.posY) + playerHeight >= groundHeight)
 	{
-		jumping = FALSE;
-		player2.VelY = FIX16(0);
+		player2.jumping = FALSE;
+		player2.velY = FIX16(0);
 		player2.posY = intToFix16(groundHeight - playerHeight);
+		player2.velX = intToFix16(0);
 	}
 	else
 	{
-		player2.VelY = fix16Add(player2.VelY, 6);
+		player2.velY = fix16Add(player2.velY, 6);
+		player2.velX = fix16Add(player2.velX, player1.horizontalNormal * 2);
+	}
+}
+
+void playerJumping(int player, int direction)
+{
+	if(player == PLAYER_1)
+	{
+		player1.jumping = TRUE;
+		player1.velY = FIX16(-4);
+	}
+
+	if (player == PLAYER_2)
+	{
+		player2.jumping = TRUE;
+		player2.velY = FIX16(-4);
 	}
 }
 
@@ -159,44 +175,22 @@ void setPlayerPosition()
 }
 
 //Input Stuff
-int p1PressedA()
+int p1ButtonPressEvent(int button)
 {
-	return(0);
+	if (button == 1)
+	{
+		playerJumping(PLAYER_1, player1.horizontalNormal * 5);
+	}
+	return (0);
 }
 
-int p1PressedB()
+int p2ButtonPressEvent(int button)
 {
-	return(0);
-}
-
-int p1PressedC()
-{
-	return(0);
-}
-
-int p1PressedStart()
-{
-	return(0);
-}
-
-int p2PressedA()
-{
-	return(0);
-}
-
-int p2PressedB()
-{
-	return(0);
-}
-
-int p2PressedC()
-{
-	return(0);
-}
-
-int p2PressedStart()
-{
-	return(0);
+	if (button == A_BUTTON)
+	{
+		playerJumping(PLAYER_2, player2.horizontalNormal);
+	}
+	return (0);
 }
 
 static void myJoyHandler(u16 joy, u16 changed, u16 state)
@@ -206,28 +200,28 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 		/*Start game if START is pressed*/
 		if (state & BUTTON_START)
 		{
-			p1PressedC();
+			p1ButtonPressEvent(START_BUTTON);
 		}
 
 		//State = This will be 1 if the button is currently pressed and 0 if it isn’t.
-		if(state & BUTTON_A)
+		if (state & BUTTON_A)
 		{
-			p1PressedC();
+			p1ButtonPressEvent(A_BUTTON);
 		}
 
-		if(state & BUTTON_B)
+		if (state & BUTTON_B)
 		{
-			p1PressedC();
+			p1ButtonPressEvent(B_BUTTON);
 		}
-		
-		if(state & BUTTON_C)
+
+		if (state & BUTTON_C)
 		{
-			p1PressedC();
+			p1ButtonPressEvent(C_BUTTON);
 		}
 
 		if (state & BUTTON_RIGHT)
 		{
-			p1Horizontal = 1;
+			player1.horizontalNormal = 1;
 		}
 		else
 		{
@@ -235,13 +229,13 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
 			if (changed & BUTTON_RIGHT)
 			{
-				p1Horizontal = 0;
+				player1.horizontalNormal = 0;
 			}
 		}
-		
+
 		if (state & BUTTON_LEFT)
 		{
-			p1Horizontal = -1;
+			player1.horizontalNormal = -1;
 		}
 		else
 		{
@@ -249,13 +243,13 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
 			if (changed & BUTTON_LEFT)
 			{
-				p1Horizontal = 0;
+				player1.horizontalNormal = 0;
 			}
 		}
 
 		if (state & BUTTON_UP)
 		{
-			p1Vertical = 1;
+			player1.verticalNormal = 1;
 		}
 		else
 		{
@@ -263,13 +257,13 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
 			if (changed & BUTTON_UP)
 			{
-				p1Vertical = 0;
+				player1.verticalNormal = 0;
 			}
 		}
 
 		if (state & BUTTON_DOWN)
 		{
-			p1Vertical = -1;
+			player1.verticalNormal = -1;
 		}
 		else
 		{
@@ -277,7 +271,7 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
 			if (changed & BUTTON_DOWN)
 			{
-				p1Vertical = 0;
+				player1.verticalNormal = 0;
 			}
 		}
 	}
@@ -287,28 +281,28 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 		/*Start game if START is pressed*/
 		if (state & BUTTON_START)
 		{
-			p2PressedStart();
+			p2ButtonPressEvent(START_BUTTON);
 		}
 
 		//State = This will be 1 if the button is currently pressed and 0 if it isn’t.
-		if(state & BUTTON_A)
+		if (state & BUTTON_A)
 		{
-			p2PressedA();
+			p2ButtonPressEvent(A_BUTTON);
 		}
 
-		if(state & BUTTON_B)
+		if (state & BUTTON_B)
 		{
-			p2PressedB();
+			p2ButtonPressEvent(B_BUTTON);
 		}
-		
-		if(state & BUTTON_C)
+
+		if (state & BUTTON_C)
 		{
-			p2PressedC();
+			p2ButtonPressEvent(C_BUTTON);
 		}
 
 		if (state & BUTTON_RIGHT)
 		{
-			p2Horizontal = 1;
+			player2.horizontalNormal = 1;
 		}
 		else
 		{
@@ -316,13 +310,13 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
 			if (changed & BUTTON_RIGHT)
 			{
-				p2Horizontal = 0;
+				player2.horizontalNormal = 0;
 			}
 		}
-		
+
 		if (state & BUTTON_LEFT)
 		{
-			p2Horizontal = -1;
+			player2.horizontalNormal = -1;
 		}
 		else
 		{
@@ -330,13 +324,13 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
 			if (changed & BUTTON_LEFT)
 			{
-				p2Horizontal = 0;
+				player2.horizontalNormal = 0;
 			}
 		}
 
 		if (state & BUTTON_UP)
 		{
-			p2Vertical = 1;
+			player2.verticalNormal = 1;
 		}
 		else
 		{
@@ -344,13 +338,13 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
 			if (changed & BUTTON_UP)
 			{
-				p2Vertical = 0;
+				player2.verticalNormal = 0;
 			}
 		}
 
 		if (state & BUTTON_DOWN)
 		{
-			p2Vertical = -1;
+			player2.verticalNormal = -1;
 		}
 		else
 		{
@@ -358,7 +352,7 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
 			if (changed & BUTTON_DOWN)
 			{
-				p2Vertical = 0;
+				player2.verticalNormal = 0;
 			}
 		}
 	}
