@@ -4,6 +4,15 @@
 //Background MAps
 Map *mapBackground;
 
+//Player
+Sprite *player1Object;
+fix16 playerPosX = 32;
+fix16 playerVelX = 0;
+fix16 playerPosY = 16;
+fix16 playerVelY = 0;
+int playerWidth = 32;
+int playerHeight = 38;
+bool jumping = FALSE;
 
 void init();
 void setupPlayField();
@@ -43,6 +52,7 @@ void init()
 
 	SPR_init(0, 0, 0);
 	setupPlayField();
+	setupPlayers();
 }
 
 void setupPlayField()
@@ -58,9 +68,15 @@ void setupPlayField()
 	//Manually sets a pallete colour to a hex code
 	//First pallet is the background color
 	//SHANE THIS IS USEFUL
-	VDP_setPaletteColor(0, RGB24_TO_VDPCOLOR(0x6dc2ca));
+	VDP_setPaletteColor(0, RGB24_TO_VDPCOLOR(0x00000));
 }
 
+void setupPlayers()
+{
+	VDP_setPalette(PAL2, player1Sprite.palette->data);
+	player1Object = SPR_addSprite(&player1Sprite, fix16ToInt(playerPosX), 120, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	SPR_update();
+}
 
 static void myJoyHandler(u16 joy, u16 changed, u16 state)
 {
