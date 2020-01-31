@@ -5,11 +5,17 @@
 Map *mapBackground;
 
 //Player
-Sprite *player1Object;
-fix16 playerPosX = 32;
-fix16 playerVelX = 0;
-fix16 playerPosY = 16;
-fix16 playerVelY = 0;
+struct Player{
+	Sprite *playerSprite;
+	fix16 posX;
+	fix16 velX;
+	fix16 posY;
+	fix16 VelY;
+};
+
+struct Player player1;
+struct Player player2;
+
 int playerWidth = 32;
 int playerHeight = 38;
 bool jumping = FALSE;
@@ -91,9 +97,11 @@ void setupPlayField()
 void setupPlayers()
 {
 	VDP_setPalette(PAL2, player1Sprite.palette->data);
-	player1Object = SPR_addSprite(&player1Sprite, fix16ToInt(playerPosX), 120, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	player1.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player1.posX), player1.posY, TILE_ATTR(PAL2, 0, FALSE, FALSE));
 	SPR_update();
 }
+
+
 
 
 //Input Stuff
