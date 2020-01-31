@@ -14,8 +14,25 @@ int playerWidth = 32;
 int playerHeight = 38;
 bool jumping = FALSE;
 
+//Controller Vectors
+int p1Horizontal = 0;
+int p1Vertical = 0;
+int p2Horizontal = 0;
+int p2Vertical = 0;
+
 void init();
 void setupPlayField();
+void setupPlayers();
+
+//Button Functions
+int p1PressedA();
+int p1PressedB();
+int p1PressedC();
+int p1PressedStart();
+int p2PressedA();
+int p2PressedB();
+int p2PressedC();
+int p2PressedStart();
 
 static void myJoyHandler(u16 joy, u16 changed, u16 state);
 
@@ -78,6 +95,48 @@ void setupPlayers()
 	SPR_update();
 }
 
+
+//Input Stuff
+int p1PressedA()
+{
+	return(0);
+}
+
+int p1PressedB()
+{
+	return(0);
+}
+
+int p1PressedC()
+{
+	return(0);
+}
+
+int p1PressedStart()
+{
+	return(0);
+}
+
+int p2PressedA()
+{
+	return(0);
+}
+
+int p2PressedB()
+{
+	return(0);
+}
+
+int p2PressedC()
+{
+	return(0);
+}
+
+int p2PressedStart()
+{
+	return(0);
+}
+
 static void myJoyHandler(u16 joy, u16 changed, u16 state)
 {
 	if (joy == JOY_1)
@@ -85,31 +144,159 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 		/*Start game if START is pressed*/
 		if (state & BUTTON_START)
 		{
-			
+			p1PressedC();
 		}
-		//Set the player velocity if the left or right dpad are pressed;
-		//Set velocity to 0 if no direction is pressed
+
 		//State = This will be 1 if the button is currently pressed and 0 if it isn’t.
+		if(state & BUTTON_A)
+		{
+			p1PressedC();
+		}
+
+		if(state & BUTTON_B)
+		{
+			p1PressedC();
+		}
+		
 		if(state & BUTTON_C)
 		{
-
+			p1PressedC();
 		}
 
 		if (state & BUTTON_RIGHT)
 		{
-			
-		}
-		else if (state & BUTTON_LEFT)
-		{
-			
+			p1Horizontal = 1;
 		}
 		else
 		{
 			//changed = This tells us whether the state of a button has changed over the last frame.
 			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
-			if ((changed & BUTTON_RIGHT) | (changed & BUTTON_LEFT))
+			if (changed & BUTTON_RIGHT)
 			{
-				
+				p1Horizontal = 0;
+			}
+		}
+		
+		if (state & BUTTON_LEFT)
+		{
+			p1Horizontal = -1;
+		}
+		else
+		{
+			//changed = This tells us whether the state of a button has changed over the last frame.
+			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
+			if (changed & BUTTON_LEFT)
+			{
+				p1Horizontal = 0;
+			}
+		}
+
+		if (state & BUTTON_UP)
+		{
+			p1Vertical = 1;
+		}
+		else
+		{
+			//changed = This tells us whether the state of a button has changed over the last frame.
+			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
+			if (changed & BUTTON_UP)
+			{
+				p1Vertical = 0;
+			}
+		}
+
+		if (state & BUTTON_DOWN)
+		{
+			p1Vertical = -1;
+		}
+		else
+		{
+			//changed = This tells us whether the state of a button has changed over the last frame.
+			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
+			if (changed & BUTTON_DOWN)
+			{
+				p1Vertical = 0;
+			}
+		}
+	}
+
+	if (joy == JOY_2)
+	{
+		/*Start game if START is pressed*/
+		if (state & BUTTON_START)
+		{
+			p2PressedStart();
+		}
+
+		//State = This will be 1 if the button is currently pressed and 0 if it isn’t.
+		if(state & BUTTON_A)
+		{
+			p2PressedA();
+		}
+
+		if(state & BUTTON_B)
+		{
+			p2PressedB();
+		}
+		
+		if(state & BUTTON_C)
+		{
+			p2PressedC();
+		}
+
+		if (state & BUTTON_RIGHT)
+		{
+			p2Horizontal = 1;
+		}
+		else
+		{
+			//changed = This tells us whether the state of a button has changed over the last frame.
+			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
+			if (changed & BUTTON_RIGHT)
+			{
+				p2Horizontal = 0;
+			}
+		}
+		
+		if (state & BUTTON_LEFT)
+		{
+			p2Horizontal = -1;
+		}
+		else
+		{
+			//changed = This tells us whether the state of a button has changed over the last frame.
+			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
+			if (changed & BUTTON_LEFT)
+			{
+				p2Horizontal = 0;
+			}
+		}
+
+		if (state & BUTTON_UP)
+		{
+			p2Vertical = 1;
+		}
+		else
+		{
+			//changed = This tells us whether the state of a button has changed over the last frame.
+			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
+			if (changed & BUTTON_UP)
+			{
+				p2Vertical = 0;
+			}
+		}
+
+		if (state & BUTTON_DOWN)
+		{
+			p2Vertical = -1;
+		}
+		else
+		{
+			//changed = This tells us whether the state of a button has changed over the last frame.
+			//If the current state is different from the state in the previous frame, this will be 1 (otherwise 0).
+			if (changed & BUTTON_DOWN)
+			{
+				p2Vertical = 0;
 			}
 		}
 	}

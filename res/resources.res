@@ -4,7 +4,7 @@ IMAGE devBG "tilemaps\BG_Placeholder.png" 0
 
 
 //Sprites
-SPRITE player1Sprite "sprites\placeholderPlayer.png" 8 8 0 5
+SPRITE player1Sprite "sprites\Robot_Test2_64.png" 8 8 0 15
 
 //Music
 
