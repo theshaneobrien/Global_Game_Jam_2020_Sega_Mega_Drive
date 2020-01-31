@@ -1,7 +1,12 @@
 #include <genesis.h>
 #include <resources.h>
 
+//Background MAps
+Map *mapBackground;
+
+
 void init();
+void setupPlayField();
 
 static void myJoyHandler(u16 joy, u16 changed, u16 state);
 
@@ -37,7 +42,23 @@ void init()
 	VDP_setPaletteColor(0, RGB24_TO_VDPCOLOR(0x6dc2ca));
 
 	SPR_init(0, 0, 0);
-	playerSetup();
+	setupPlayField();
+}
+
+void setupPlayField()
+{
+	//Set up the map tilesets
+	VDP_setPalette(PAL3, devBG.palette->data);
+	VDP_loadTileSet(devBG.tileset, 1, DMA);
+	VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
+	mapBackground = unpackMap(devBG.map, NULL);
+
+	VDP_setMapEx(PLAN_A, mapBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 1), 0, 0, 0, 0, 63, 28);
+	//Set the background color
+	//Manually sets a pallete colour to a hex code
+	//First pallet is the background color
+	//SHANE THIS IS USEFUL
+	VDP_setPaletteColor(0, RGB24_TO_VDPCOLOR(0x6dc2ca));
 }
 
 

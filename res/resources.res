@@ -1,4 +1,4 @@
-BITMAP devBG tilemaps\devBackground.png 0
+IMAGE devBG "tilemaps\devBackground.png" 0
 
 //Images
 
