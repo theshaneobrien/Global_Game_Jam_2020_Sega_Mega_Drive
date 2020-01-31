@@ -30,6 +30,8 @@ void init();
 void setupPlayField();
 void setupPlayers();
 
+void gravity();
+
 //Button Functions
 int p1PressedA();
 int p1PressedB();
@@ -49,6 +51,7 @@ int main()
 	{
 		//Updates Sprites Position / Animation Frame
 		SPR_update();
+		gravity();
 		//Wait for the frame to finish rendering
 		VDP_waitVSync();
 		
@@ -101,7 +104,29 @@ void setupPlayers()
 	SPR_update();
 }
 
+void gravity()
+{
+	//Apply Velocity, need to use fix16Add to add two "floats" together
+	player1.posY = fix16Add(player1.posY, player1.VelY);
 
+	//Apply gravity
+	if (jumping == TRUE)
+	{
+		
+	}
+
+	//Check if player is on floor
+	if (fix16ToInt(player1.posY) + playerHeight >= 300)
+	{
+		jumping = FALSE;
+	 	player1.VelY = FIX16(0);
+		player1.posY = intToFix16(testGroundCollision(0) - playerHeight);
+	 }
+	 else
+	 {
+		 player1.VelY  = fix16Add(player1.VelY, 6);
+	 }
+}
 
 
 //Input Stuff
