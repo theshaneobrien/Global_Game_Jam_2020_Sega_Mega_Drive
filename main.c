@@ -17,9 +17,10 @@ Map *cloudBackground;
 struct Projectile{
 	bool projectileAlive;
 	Sprite* projectileSprite;
-	fix16 projXPos;
-	fix16 projYPos;
+	fix16 posX;
+	fix16 posY;
 	int projectileSpeed;
+	int projectileOwner;
 };
 int projectileHitSize = 8;
 int projectileSpawnXOffset = 32;
@@ -183,11 +184,12 @@ void setupPlayers()
 	player1.playerShield.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player1.posX) + shieldOffset, player1.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 	SPR_setVisibility(player1.playerShield.shieldSprite, HIDDEN);
 	//Projectile
+	player1.playerProjectile.projectileOwner = PLAYER_1;
 	player1.playerProjectile.projectileAlive = FALSE;
 	player1.playerProjectile.projectileSpeed = 0;
-	player1.playerProjectile.projXPos = player1.posX + intToFix16(projectileSpawnXOffset);
-	player1.playerProjectile.projYPos = intToFix16(fix16ToInt(player1.posY) + projectileSpawnYOffset);
-	player1.playerProjectile.projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(player1.posX) + projectileSpawnXOffset, player1.playerProjectile.projYPos, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	player1.playerProjectile.posX = player1.posX + intToFix16(projectileSpawnXOffset);
+	player1.playerProjectile.posY = intToFix16(fix16ToInt(player1.posY) + projectileSpawnYOffset);
+	player1.playerProjectile.projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(player1.posX) + projectileSpawnXOffset, player1.playerProjectile.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 	SPR_setVisibility(player1.playerProjectile.projectileSprite, HIDDEN);
 
 	//Set the players intial position and constraints
@@ -199,11 +201,12 @@ void setupPlayers()
 	player2.playerShield.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player2.posX) - 0, player2.posY, TILE_ATTR(PAL1, 0, FALSE, TRUE));
 	SPR_setVisibility(player2.playerShield.shieldSprite, HIDDEN);
 	//Projectile
+	player2.playerProjectile.projectileOwner = PLAYER_2;
 	player2.playerProjectile.projectileAlive = FALSE;
 	player2.playerProjectile.projectileSpeed = 0;
-	player2.playerProjectile.projXPos = player2.posX + intToFix16(projectileSpawnXOffset);
-	player2.playerProjectile.projYPos = intToFix16(fix16ToInt(player2.posY) + projectileSpawnYOffset);
-	player2.playerProjectile.projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(player2.posX) + projectileSpawnXOffset, player2.playerProjectile.projYPos, TILE_ATTR(PAL1, 0, FALSE, TRUE));
+	player2.playerProjectile.posX = player2.posX + intToFix16(projectileSpawnXOffset);
+	player2.playerProjectile.posY = intToFix16(fix16ToInt(player2.posY) + projectileSpawnYOffset);
+	player2.playerProjectile.projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(player2.posX) + projectileSpawnXOffset, player2.playerProjectile.posY, TILE_ATTR(PAL1, 0, FALSE, TRUE));
 	SPR_setVisibility(player2.playerProjectile.projectileSprite, HIDDEN);
 
 	//Insert the player sprites at the above positions
@@ -398,13 +401,13 @@ void p1ProjectileLife()
 	if (player1.playerProjectile.projectileAlive == TRUE)
 	{
 		player1.playerProjectile.projectileSpeed = projectileStartSpeed;
-		player1.playerProjectile.projXPos = fix16Add(player1.playerProjectile.projXPos, intToFix16(player1.playerProjectile.projectileSpeed));
-		//player1.playerProjectile.projYPos = fix16Add(player1.posX, player1.velX);
-		SPR_setPosition(player1.playerProjectile.projectileSprite, fix16ToInt(player1.playerProjectile.projXPos), fix16ToInt(player1.playerProjectile.projYPos));
-		if (player1.playerProjectile.projXPos > intToFix16(screenWidth))
+		player1.playerProjectile.posX = fix16Add(player1.playerProjectile.posX, intToFix16(player1.playerProjectile.projectileSpeed));
+		//player1.playerProjectile.posY = fix16Add(player1.posX, player1.velX);
+		SPR_setPosition(player1.playerProjectile.projectileSprite, fix16ToInt(player1.playerProjectile.posX), fix16ToInt(player1.playerProjectile.posY));
+		if (player1.playerProjectile.posX > intToFix16(screenWidth))
 		{
 			SPR_setVisibility(player1.playerProjectile.projectileSprite, HIDDEN);
-			player1.playerProjectile.projXPos = player1.posX + intToFix16(projectileSpawnXOffset);
+			player1.playerProjectile.posX = player1.posX + intToFix16(projectileSpawnXOffset);
 			player1.playerProjectile.projectileAlive == FALSE;
 		}
 	}
@@ -415,12 +418,12 @@ void p2ProjectileLife()
 	if(player2.playerProjectile.projectileAlive == TRUE)
 	{
 		player2.playerProjectile.projectileSpeed = projectileStartSpeed; 
-		player2.playerProjectile.projXPos = fix16Sub(player2.playerProjectile.projXPos, intToFix16(player2.playerProjectile.projectileSpeed));
-		//player1.playerProjectile.projYPos = fix16Add(player1.posX, player1.velX);
-		SPR_setPosition(player2.playerProjectile.projectileSprite, fix16ToInt(player2.playerProjectile.projXPos), fix16ToInt(player2.playerProjectile.projYPos));
-		if(player2.playerProjectile.projXPos < 0)
+		player2.playerProjectile.posX = fix16Sub(player2.playerProjectile.posX, intToFix16(player2.playerProjectile.projectileSpeed));
+		//player1.playerProjectile.posY = fix16Add(player1.posX, player1.velX);
+		SPR_setPosition(player2.playerProjectile.projectileSprite, fix16ToInt(player2.playerProjectile.posX), fix16ToInt(player2.playerProjectile.posY));
+		if(player2.playerProjectile.posX < 0)
 		{
-			player2.playerProjectile.projXPos = player2.posX + intToFix16(projectileSpawnXOffset);
+			player2.playerProjectile.posX = player2.posX + intToFix16(projectileSpawnXOffset);
 			player2.playerProjectile.projectileAlive == FALSE;
 			SPR_setVisibility(player2.playerProjectile.projectileSprite, HIDDEN);
 		}
@@ -432,7 +435,7 @@ void checkProjShieldCollision()
 {
 	if (player1.playerProjectile.projectileAlive == TRUE && player1.playerShield.shieldActive == TRUE)
 	{
-		//.playerShield.shieldActiveif(player1.playerProjectile.projXPos < )
+		//.playerShield.shieldActiveif(player1.playerProjectile.posX < )
 	}
 }
 
@@ -464,8 +467,8 @@ int p1ButtonPressEvent(int button)
 	{
 		player1.playerProjectile.projectileAlive = TRUE;
 		SPR_setVisibility(player1.playerProjectile.projectileSprite, VISIBLE);
-		player1.playerProjectile.projYPos = intToFix16(fix16ToInt(player1.posY) + projectileSpawnYOffset);
-		player1.playerProjectile.projXPos = player1.posX + intToFix16(projectileSpawnXOffset);
+		player1.playerProjectile.posY = intToFix16(fix16ToInt(player1.posY) + projectileSpawnYOffset);
+		player1.playerProjectile.posX = player1.posX + intToFix16(projectileSpawnXOffset);
 	}
 	else if (button == C_BUTTON)
 	{
@@ -484,8 +487,8 @@ int p2ButtonPressEvent(int button)
 	{
 		player2.playerProjectile.projectileAlive = TRUE;
 		SPR_setVisibility(player2.playerProjectile.projectileSprite, VISIBLE);
-		player2.playerProjectile.projYPos = intToFix16(fix16ToInt(player2.posY) + projectileSpawnYOffset);
-		player2.playerProjectile.projXPos = player2.posX + intToFix16(projectileSpawnXOffset);
+		player2.playerProjectile.posY = intToFix16(fix16ToInt(player2.posY) + projectileSpawnYOffset);
+		player2.playerProjectile.posX = player2.posX + intToFix16(projectileSpawnXOffset);
 	}
 	else if( button == C_BUTTON)
 	{
