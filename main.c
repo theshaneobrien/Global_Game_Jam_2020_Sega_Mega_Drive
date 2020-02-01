@@ -17,6 +17,18 @@ int desiredScreenHeight = 224;
 Map *mapBackground;
 Map *cloudBackground;
 
+//Projectile vars
+struct Projectile{
+	bool projectileAlive;
+	Sprite* projectileSprite;
+	fix16 projXPos;
+	fix16 projYPos;
+	int projectileSpeed;
+};
+int projectileSpawnXOffset = 32;
+int projectileSpawnYOffset = 32;
+int projectileStartSpeed = 3;
+
 //Player
 struct Player{
 	Sprite *playerSprite;
@@ -50,18 +62,6 @@ int p2ShieldFrameCount = 0;
 int shieldFrameTime = 5;
 int shieldOffset = 40;
 
-//Projectile vars
-struct Projectile{
-	bool projectileAlive;
-	Sprite* projectileSprite;
-	int projXPos;
-	int projYPos;
-	int projectileSpeed;
-};
-int projectileSpawnXOffset = 32;
-int projectileSpawnYOffset = 32;
-int projectileStartSpeed = 3;
-
 const int groundHeight = 180;
 
 int scrollSpeed = 1;
@@ -90,8 +90,8 @@ void setupMusic();
 int p1ButtonPressEvent(int button);
 int p2ButtonPressEvent(int button);
 
-static void
-myJoyHandler(u16 joy, u16 changed, u16 state);
+static void myJoyHandler(u16 joy, u16 changed, u16 state);
+
 int main()
 {
 	init();
@@ -178,17 +178,28 @@ void setupPlayers()
 	player1.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player1.posX) + shieldOffset, player1.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 	SPR_setVisibility(player1.shieldSprite, HIDDEN);
 	//Projectile
-	player1.playerProjectile.projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(player1.posX) + projectileSpawnXOffset, fix16ToInt(player1.posY) + projectileSpawnYOffset, TILE_ATTR(PAL1,0,FALSE,FALSE));
 	player1.playerProjectile.projectileAlive = FALSE;
-	
+	player1.playerProjectile.projectileSpeed = projectileStartSpeed;
+	player1.playerProjectile.projXPos = player1.playerProjectile.projXPos = player1.posX + intToFix16(projectileSpawnXOffset);
+	player1.playerProjectile.projYPos = player1.playerProjectile.projYPos = player1.posX + intToFix16(projectileSpawnYOffset);
+	player1.playerProjectile.projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(player1.posX) + projectileSpawnXOffset, fix16ToInt(player1.posY) + projectileSpawnYOffset, TILE_ATTR(PAL1,0,FALSE,FALSE));
+	SPR_setVisibility(player1.playerProjectile.projectileSprite, HIDDEN);
 
-
+	//Set the players intial position and constraints
 	player2.posX = intToFix16(256);
 	player2.posY = intToFix16(64 - playerHeight);
 	player2.moveConstraintXLeft = screenWidth / 2;
 	player2.moveConstraintXRight = 256;
+	//Shield
 	player2.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player2.posX) - 0, player2.posY, TILE_ATTR(PAL1, 0, FALSE, TRUE));
 	SPR_setVisibility(player2.shieldSprite, HIDDEN);
+	//Projectile
+	player2.playerProjectile.projectileAlive = FALSE;
+	player2.playerProjectile.projectileSpeed = projectileStartSpeed;
+	player2.playerProjectile.projXPos = player2.playerProjectile.projXPos = player2.posX + intToFix16(projectileSpawnXOffset);
+	player2.playerProjectile.projYPos = player2.playerProjectile.projYPos = player2.posX + intToFix16(projectileSpawnYOffset);
+	player2.playerProjectile.projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(player2.posX) + projectileSpawnXOffset, fix16ToInt(player2.posY) + projectileSpawnYOffset, TILE_ATTR(PAL1,0,FALSE,TRUE));
+	SPR_setVisibility(player2.playerProjectile.projectileSprite, HIDDEN);
 
 	//Insert the player sprites at the above positions
 	player1.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY), TILE_ATTR(PAL1, 0, FALSE, FALSE));
@@ -396,11 +407,11 @@ int p1ButtonPressEvent(int button)
 	{
 		playerJumping(PLAYER_1, player1.horizontalNormal);
 	}
-	else if( button == B_BUTTON)
+	else if(button == B_BUTTON)
 	{
-		
+		SPR_setVisibility(player1.playerProjectile.projectileSprite, VISIBLE);
 	}
-	else if( button == C_BUTTON)
+	else if(button == C_BUTTON)
 	{
 		player1.shieldActive = TRUE;
 	}
@@ -415,7 +426,7 @@ int p2ButtonPressEvent(int button)
 	}
 	else if( button == B_BUTTON)
 	{
-
+		SPR_setVisibility(player2.playerProjectile.projectileSprite, VISIBLE);
 	}
 	else if( button == C_BUTTON)
 	{
@@ -438,10 +449,14 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 		if (state & BUTTON_A)
 		{
 			p1ButtonPressEvent(A_BUTTON);
-		}else if (state & BUTTON_B)
+		}
+		
+		if (state & BUTTON_B)
 		{
 			p1ButtonPressEvent(B_BUTTON);
-		}else if (state & BUTTON_C)
+		}
+		
+		if (state & BUTTON_C)
 		{
 			p1ButtonPressEvent(C_BUTTON);
 		}
