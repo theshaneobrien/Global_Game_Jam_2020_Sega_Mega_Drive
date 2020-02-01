@@ -9,10 +9,6 @@
 #include <genesis.h>
 #include <resources.h>
 
-//Screen
-int desiredScreenWidth = 320;
-int desiredScreenHeight = 224;
-
 //Background MAps
 Map *mapBackground;
 Map *cloudBackground;
