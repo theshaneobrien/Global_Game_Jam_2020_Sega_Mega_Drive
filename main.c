@@ -137,7 +137,7 @@ void init()
 
 void setupMusic()
 {
-	XGM_setLoopNumber(10);
+	XGM_setLoopNumber(-1);
 	XGM_startPlay(&music);
 }
 
