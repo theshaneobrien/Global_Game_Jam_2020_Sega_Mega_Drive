@@ -49,9 +49,11 @@ void gravity();
 void playerJumping();
 void playerWalking();
 void setPlayerPosition();
+
 fix16 SineEaseInOut(fix16 p);
 int countFrames();
 void ScrollBackground();
+void setupMusic();
 //Button Functions
 int p1ButtonPressEvent(int button);
 int p2ButtonPressEvent(int button);
@@ -95,6 +97,19 @@ void init()
 	SPR_init(0, 0, 0);
 	setupPlayField();
 	setupPlayers();
+	setupMusic();
+}
+
+void setupMusic()
+{
+	XGM_setLoopNumber(10);
+	//Load PCM 65 with the start sound effect, how long it is
+	//XGM_setPCM(65, &start, 17664);
+	//Play PCM 65, Priority 1 signal from starflet, sound channel 2
+	//XGM_startPlayPCM(65, 1, SOUND_PCM_CH2);
+	//Play our Music
+	XGM_startPlay(&music);
+
 }
 
 void setupPlayField()
