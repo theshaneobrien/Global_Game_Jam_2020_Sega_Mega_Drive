@@ -1,4 +1,4 @@
-IMAGE devBG "tilemaps\BG_Placeholder.png" 0
+IMAGE devBG "tilemaps\BG_Placeholder_Coloured.png" 0
 
 //Images
 
