@@ -162,6 +162,7 @@ void setupPlayers()
 	player1.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player1.posX) + shieldOffset, player1.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 	SPR_setVisibility(player1.shieldSprite, HIDDEN);
 
+
 	player2.posX = intToFix16(256);
 	player2.posY = intToFix16(64 - playerHeight);
 	player2.moveConstraintXLeft = screenWidth / 2;
@@ -171,6 +172,7 @@ void setupPlayers()
 
 	//Insert the player sprites at the above positions
 	player1.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY), TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	SPR_setAnim(player1.playerSprite, 1);
 	player2.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player2.posX), fix16ToInt(player2.posY), TILE_ATTR(PAL1, 0, FALSE, TRUE));
 	SPR_update();
 }
@@ -287,12 +289,14 @@ void p1ShieldTimer()
 	if(player1.shieldActive)
 	{
 		SPR_setVisibility(player1.shieldSprite, VISIBLE);
-
+		SPR_setAnim(player1.shieldSprite, 0);
+		SPR_update();
 		//Start counting frames
 		p1ShieldFrameCount++;
 		if(p1ShieldFrameCount > shieldFrameTime)
 		{
 			SPR_setVisibility(player1.shieldSprite, HIDDEN);
+			//SPR_setAnim(player1.shieldSprite, 0);
 			player1.shieldActive = FALSE;
 			p1ShieldFrameCount = 0;
 		}
