@@ -42,6 +42,7 @@ void gravity();
 void playerJumping();
 void playerWalking();
 void setPlayerPosition();
+fix16 SineEaseInOut(fix16 p);
 //Button Functions
 int p1ButtonPressEvent(int button);
 int p2ButtonPressEvent(int button);
@@ -181,8 +182,14 @@ void playerWalking()
 
 void setPlayerPosition()
 {
-	SPR_setPosition(player1.playerSprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY));
+	SPR_setPosition(player1.playerSprite, fix16ToInt(player1.posX) * player1.horizontalNormal)), fix16ToInt(player1.posY));
 	SPR_setPosition(player2.playerSprite, fix16ToInt(player2.posX), fix16ToInt(player2.posY));
+}
+
+//Easings
+fix16 SineEaseInOut(fix16 p)
+{
+	return FIX16(0.5 * (1 - cosFix16( p * 3 )));
 }
 
 //Input Stuff
