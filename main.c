@@ -106,6 +106,7 @@ void init()
 	//Set up the resolution
 	VDP_setScreenWidth320();
 	VDP_setPlanSize(64, 32);
+	VDP_setScrollingMode(HSCROLL_PLANE,VSCROLL_PLANE);
 	
 	//Set the background color
 	//Manually sets a pallete colour to a hex code
@@ -127,18 +128,21 @@ void setupMusic()
 
 void setupPlayField()
 {
+	
 	//Set up the map tilesets
 	VDP_setPalette(PAL3, BGBuildings.palette->data);
-	VDP_loadTileSet(BGBuildings.tileset, 1, DMA);
-	VDP_setScrollingMode(HSCROLL_PLANE,VSCROLL_PLANE);
+
+	int currentIndex = TILE_USERINDEX;
+	VDP_loadTileSet(BGBuildings.tileset, currentIndex, DMA);
+	currentIndex += BGBuildings.tileset->numTile;	
+	VDP_loadTileSet(BGClouds.tileset, currentIndex, DMA);
+	
 	mapBackground = unpackMap(BGBuildings.map, NULL);
-
 	//Background art is using Palette 3
-	VDP_setMapEx(PLAN_A, mapBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 1), 0, 0, 0, 0, 64, 28);
+	VDP_setMapEx(PLAN_A, mapBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, TILE_USERINDEX), 0, 0, 0, 0, 64, 28);
 
-	VDP_loadTileSet(BGClouds.tileset, 320, DMA);
 	cloudBackground = unpackMap(BGClouds.map, NULL);
-	VDP_setMapEx(PLAN_B, cloudBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 320), 0, 0, 0, 0, 64, 28);
+	VDP_setMapEx(PLAN_B, cloudBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, currentIndex), 0, 0, 0, 0, 64, 28);
 	//Set the background color
 	//Manually sets a pallete colour to a hex code
 	//First pallet is the background color
