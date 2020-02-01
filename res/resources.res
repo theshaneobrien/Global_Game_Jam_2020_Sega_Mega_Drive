@@ -1,4 +1,5 @@
-IMAGE devBG "tilemaps\BG_Placeholder_Coloured.png" 0
+IMAGE BGBuildings "tilemaps\FG_BuildingsandJunkWIP.png" 0
+IMAGE BGClouds "tilemaps\BG_CloudsColor.png" 0
 
 //Images
 

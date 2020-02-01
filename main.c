@@ -11,6 +11,7 @@
 
 //Background MAps
 Map *mapBackground;
+Map *cloudBackground;
 
 //Player
 struct Player{
@@ -22,6 +23,7 @@ struct Player{
 	int horizontalNormal;
 	int verticalNormal;
 	bool jumping;
+	bool isMoving;
 };
 
 struct Player player1;
@@ -35,6 +37,11 @@ const fix16 jumpDistance = FIX16(0.75);
 
 const int groundHeight = 180;
 
+
+int scrollSpeed = 1;
+int scrollAmount;
+int frameCount = 0;
+
 void init();
 void setupPlayField();
 void setupPlayers();
@@ -43,18 +50,21 @@ void playerJumping();
 void playerWalking();
 void setPlayerPosition();
 fix16 SineEaseInOut(fix16 p);
+int countFrames();
+void ScrollBackground();
 //Button Functions
 int p1ButtonPressEvent(int button);
 int p2ButtonPressEvent(int button);
 
 static void
 myJoyHandler(u16 joy, u16 changed, u16 state);
-
 int main()
 {
 	init();
 	while (1)
 	{
+		countFrames();
+		ScrollBackground();
 		//Updates Sprites Position / Animation Frame
 		SPR_update();
 		gravity();
@@ -90,13 +100,17 @@ void init()
 void setupPlayField()
 {
 	//Set up the map tilesets
-	VDP_setPalette(PAL3, devBG.palette->data);
-	VDP_loadTileSet(devBG.tileset, 1, DMA);
-	VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
-	mapBackground = unpackMap(devBG.map, NULL);
+	VDP_setPalette(PAL3, BGBuildings.palette->data);
+	VDP_loadTileSet(BGBuildings.tileset, 1, DMA);
+	VDP_setScrollingMode(HSCROLL_PLANE,VSCROLL_PLANE);
+	mapBackground = unpackMap(BGBuildings.map, NULL);
 
 	//Background art is using Palette 3
-	VDP_setMapEx(PLAN_A, mapBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 1), 0, 0, 0, 0, 63, 28);
+	VDP_setMapEx(PLAN_A, mapBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 1), 0, 0, 0, 0, 64, 28);
+
+	VDP_loadTileSet(BGClouds.tileset, 256, DMA);
+	cloudBackground = unpackMap(BGClouds.map, NULL);
+	VDP_setMapEx(PLAN_B, cloudBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 256), 0, 0, 0, 0, 64, 28);
 	//Set the background color
 	//Manually sets a pallete colour to a hex code
 	//First pallet is the background color
@@ -122,6 +136,16 @@ void setupPlayers()
 	player1.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY), TILE_ATTR(PAL1, 0, FALSE, FALSE));
 	player2.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player2.posX), fix16ToInt(player2.posY), TILE_ATTR(PAL1, 0, FALSE, TRUE));
 	SPR_update();
+}
+
+int countFrames()
+{
+	frameCount++;
+	if(frameCount>60)
+	{
+		frameCount = 0;
+	}
+	return frameCount;
 }
 
 void gravity()
@@ -177,12 +201,41 @@ void playerJumping(int player, int direction)
 
 void playerWalking()
 {
-	player1.posX += intToFix16((playerWidth / 2) * player1.horizontalNormal);
+	
+	if(player1.horizontalNormal == 1)
+	{
+		if(player1.posX < intToFix16((320 / 2) - playerWidth))
+		{
+			player1.posX += intToFix16(playerWidth / 2);
+		}
+	}
+	else if(player1.horizontalNormal == -1)
+	{
+		if(player1.posX > intToFix16(0))
+		{
+			player1.posX -= intToFix16(playerWidth / 2);
+		}
+	}
+
+	if(player2.horizontalNormal == 1)
+	{
+		if(player2.posX > 256)
+		{
+			player2.posX += intToFix16(playerWidth / 2);
+		}
+	}
+	else if(player2.horizontalNormal == -1)
+	{
+		if(player2.posX > intToFix16((320 / 2)))
+		{
+			player2.posX -= intToFix16(playerWidth / 2);
+		}
+	}
 }
 
 void setPlayerPosition()
 {
-	SPR_setPosition(player1.playerSprite, fix16ToInt(player1.posX) * player1.horizontalNormal)), fix16ToInt(player1.posY));
+	SPR_setPosition(player1.playerSprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY));
 	SPR_setPosition(player2.playerSprite, fix16ToInt(player2.posX), fix16ToInt(player2.posY));
 }
 
@@ -190,6 +243,17 @@ void setPlayerPosition()
 fix16 SineEaseInOut(fix16 p)
 {
 	return FIX16(0.5 * (1 - cosFix16( p * 3 )));
+}
+
+//Background Effects
+void ScrollBackground()
+{
+	if(frameCount % 6 == 0)
+	{
+		
+	VDP_setHorizontalScroll(PLAN_B, scrollAmount -= scrollSpeed);
+		
+	}
 }
 
 //Input Stuff
@@ -255,6 +319,7 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 		if (state & BUTTON_LEFT)
 		{
 			player1.horizontalNormal = -1;
+			playerWalking();
 		}
 		else
 		{
@@ -322,6 +387,7 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 		if (state & BUTTON_RIGHT)
 		{
 			player2.horizontalNormal = 1;
+			playerWalking();
 		}
 		else
 		{
@@ -336,6 +402,7 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 		if (state & BUTTON_LEFT)
 		{
 			player2.horizontalNormal = -1;
+			playerWalking();
 		}
 		else
 		{

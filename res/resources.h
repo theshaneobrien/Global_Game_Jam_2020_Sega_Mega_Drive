@@ -2,6 +2,7 @@
 #define _RES_RESOURCES_H_
 
 extern const SpriteDefinition player1Sprite;
-extern const Image devBG;
+extern const Image BGBuildings;
+extern const Image BGClouds;
 
 #endif // _RES_RESOURCES_H_
