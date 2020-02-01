@@ -1,7 +1,7 @@
 #define START_BUTTON 1
-#define A_BUTTON 1
-#define B_BUTTON 1
-#define C_BUTTON 1
+#define A_BUTTON 2
+#define B_BUTTON 3
+#define C_BUTTON 4
 
 #define PLAYER_1 1
 #define PLAYER_2 2
@@ -92,6 +92,7 @@ void setupPlayField()
 	VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
 	mapBackground = unpackMap(devBG.map, NULL);
 
+	//Background art is using Palette 3
 	VDP_setMapEx(PLAN_A, mapBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 1), 0, 0, 0, 0, 63, 28);
 	//Set the background color
 	//Manually sets a pallete colour to a hex code
@@ -101,19 +102,22 @@ void setupPlayField()
 }
 
 void setupPlayers()
-{
-	VDP_setPalette(PAL2, player1Sprite.palette->data);
+{ 
+	//Sprites are using Palette 1
+	VDP_setPalette(PAL1, player1Sprite.palette->data);
 
 	players[0] = player1;
 	players[1] = player2;
 
+	//Set the players intial position
 	player1.posX = intToFix16(0);
 	player2.posX = intToFix16(256);
 	player1.posY = intToFix16(64 - playerHeight);
 	player2.posY = intToFix16(64 - playerHeight);
 
-	player1.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY), TILE_ATTR(PAL2, 0, FALSE, FALSE));
-	player2.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player2.posX), fix16ToInt(player2.posY), TILE_ATTR(PAL2, 0, FALSE, TRUE));
+	//Insert the player sprites at the above positions
+	player1.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY), TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	player2.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player2.posX), fix16ToInt(player2.posY), TILE_ATTR(PAL1, 0, FALSE, TRUE));
 	SPR_update();
 }
 
@@ -136,7 +140,6 @@ void gravity()
 	else
 	{
 		player1.velY = fix16Add(player1.velY, 6);
-		player1.velX = fix16Add(player1.velX, player1.horizontalNormal * 2);
 	}
 
 	if (fix16ToInt(player2.posY) + playerHeight >= groundHeight)
@@ -149,7 +152,6 @@ void gravity()
 	else
 	{
 		player2.velY = fix16Add(player2.velY, 6);
-		player2.velX = fix16Add(player2.velX, player1.horizontalNormal * 2);
 	}
 }
 
@@ -159,12 +161,14 @@ void playerJumping(int player, int direction)
 	{
 		player1.jumping = TRUE;
 		player1.velY = FIX16(-4);
+		player1.velX = FIX16(player1.horizontalNormal * 1);
 	}
 
 	if (player == PLAYER_2)
 	{
 		player2.jumping = TRUE;
 		player2.velY = FIX16(-4);
+		player2.velX = FIX16(player2.horizontalNormal * 1);
 	}
 }
 
@@ -177,9 +181,13 @@ void setPlayerPosition()
 //Input Stuff
 int p1ButtonPressEvent(int button)
 {
-	if (button == 1)
+	if (button == A_BUTTON)
 	{
 		playerJumping(PLAYER_1, player1.horizontalNormal * 5);
+	}
+	else
+	{
+
 	}
 	return (0);
 }
@@ -207,14 +215,10 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 		if (state & BUTTON_A)
 		{
 			p1ButtonPressEvent(A_BUTTON);
-		}
-
-		if (state & BUTTON_B)
+		}else if (state & BUTTON_B)
 		{
 			p1ButtonPressEvent(B_BUTTON);
-		}
-
-		if (state & BUTTON_C)
+		}else if (state & BUTTON_C)
 		{
 			p1ButtonPressEvent(C_BUTTON);
 		}
