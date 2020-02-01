@@ -30,6 +30,8 @@ struct Player players[2];
 
 const int playerWidth = 64;
 const int playerHeight = 64;
+const int jumpForce = -3;
+const fix16 jumpDistance = FIX16(0.75);
 
 const int groundHeight = 180;
 
@@ -38,8 +40,8 @@ void setupPlayField();
 void setupPlayers();
 void gravity();
 void playerJumping();
+void playerWalking();
 void setPlayerPosition();
-
 //Button Functions
 int p1ButtonPressEvent(int button);
 int p2ButtonPressEvent(int button);
@@ -157,19 +159,24 @@ void gravity()
 
 void playerJumping(int player, int direction)
 {
-	if(player == PLAYER_1)
+	if(player == PLAYER_1 && player1.jumping != TRUE)
 	{
 		player1.jumping = TRUE;
-		player1.velY = FIX16(-4);
-		player1.velX = FIX16(player1.horizontalNormal * 1);
+		player1.velY = FIX16(jumpForce);
+		player1.velX = fix16Mul(intToFix16(player1.horizontalNormal), jumpDistance);
 	}
 
-	if (player == PLAYER_2)
+	if (player == PLAYER_2 && player1.jumping != TRUE)
 	{
 		player2.jumping = TRUE;
-		player2.velY = FIX16(-4);
-		player2.velX = FIX16(player2.horizontalNormal * 1);
+		player2.velY = FIX16(jumpForce);
+		player2.velX = fix16Mul(intToFix16(player2.horizontalNormal), jumpDistance);
 	}
+}
+
+void playerWalking()
+{
+	player1.posX += intToFix16((playerWidth / 2) * player1.horizontalNormal);
 }
 
 void setPlayerPosition()
@@ -226,6 +233,7 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 		if (state & BUTTON_RIGHT)
 		{
 			player1.horizontalNormal = 1;
+			playerWalking();
 		}
 		else
 		{
