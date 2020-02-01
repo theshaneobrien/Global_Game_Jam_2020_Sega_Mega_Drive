@@ -182,6 +182,7 @@ void setupPlayers()
 	player1.playerProjectile.projectileAlive = FALSE;
 	
 
+
 	player2.posX = intToFix16(256);
 	player2.posY = intToFix16(64 - playerHeight);
 	player2.moveConstraintXLeft = screenWidth / 2;
