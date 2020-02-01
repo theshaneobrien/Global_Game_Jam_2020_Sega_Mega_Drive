@@ -25,9 +25,22 @@ struct Projectile{
 	fix16 projYPos;
 	int projectileSpeed;
 };
+int projectileHitSize = 8;
 int projectileSpawnXOffset = 32;
 int projectileSpawnYOffset = 32;
 int projectileStartSpeed = 10;
+struct Projectile projectiles[2];
+
+//Shield vars
+struct Shield{
+	Sprite* shieldSprite;
+	bool shieldActive;
+};
+int p1ShieldFrameCount = 0;
+int p2ShieldFrameCount = 0;
+int shieldFrameTime = 5;
+int shieldOffset = 40;
+int shieldWidth = 32;
 
 //Player
 struct Player{
@@ -42,9 +55,8 @@ struct Player{
 	bool isMoving;
 	int moveConstraintXLeft;
 	int moveConstraintXRight;
-	Sprite* shieldSprite;
-	bool shieldActive;
 	struct Projectile playerProjectile;
+	struct Shield playerShield;
 };
 
 struct Player player1;
@@ -55,12 +67,6 @@ const int playerWidth = 64;
 const int playerHeight = 64;
 const int jumpForce = -3;
 const fix16 jumpDistance = FIX16(0.75);
-
-//Shield vars
-int p1ShieldFrameCount = 0;
-int p2ShieldFrameCount = 0;
-int shieldFrameTime = 5;
-int shieldOffset = 40;
 
 const int groundHeight = 200;
 
@@ -83,8 +89,10 @@ void p2ShieldTimer();
 //ProjectileUpdates
 void p1ProjectileLife();
 void p2ProjectileLife();
+//Collision
+void chackBallShieldCollision();
 
-fix16 SineEaseInOut(fix16 p);
+//fix16 SineEaseInOut(fix16 p);
 int countFrames();
 void ScrollBackground();
 void setupMusic();
@@ -114,7 +122,6 @@ int main()
 		VDP_waitVSync();
 	}
 	return(0);
-	
 }
 
 void init()
@@ -127,12 +134,6 @@ void init()
 	VDP_setScreenWidth320();
 	VDP_setPlanSize(64, 32);
 	VDP_setScrollingMode(HSCROLL_PLANE,VSCROLL_PLANE);
-	
-	//Set the background color
-	//Manually sets a pallete colour to a hex code
-	//First pallet is the background color
-	//SHANE THIS IS USEFUL
-	VDP_setPaletteColor(0, RGB24_TO_VDPCOLOR(0x6dc2ca));
 
 	SPR_init(0, 0, 0);
 	setupPlayField();
@@ -148,7 +149,6 @@ void setupMusic()
 
 void setupPlayField()
 {
-	
 	//Set up the map tilesets
 	VDP_setPalette(PAL3, BGBuildings.palette->data);
 
@@ -184,8 +184,8 @@ void setupPlayers()
 	player1.moveConstraintXLeft = 0;
 	player1.moveConstraintXRight = (screenWidth / 2) - playerWidth;
 	//Shield
-	player1.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player1.posX) + shieldOffset, player1.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	SPR_setVisibility(player1.shieldSprite, HIDDEN);
+	player1.playerShield.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player1.posX) + shieldOffset, player1.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	SPR_setVisibility(player1.playerShield.shieldSprite, HIDDEN);
 	//Projectile
 	player1.playerProjectile.projectileAlive = FALSE;
 	player1.playerProjectile.projectileSpeed = 0;
@@ -200,8 +200,8 @@ void setupPlayers()
 	player2.moveConstraintXLeft = screenWidth / 2;
 	player2.moveConstraintXRight = 256;
 	//Shield
-	player2.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player2.posX) - 0, player2.posY, TILE_ATTR(PAL1, 0, FALSE, TRUE));
-	SPR_setVisibility(player2.shieldSprite, HIDDEN);
+	player2.playerShield.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player2.posX) - 0, player2.posY, TILE_ATTR(PAL1, 0, FALSE, TRUE));
+	SPR_setVisibility(player2.playerShield.shieldSprite, HIDDEN);
 	//Projectile
 	player2.playerProjectile.projectileAlive = FALSE;
 	player2.playerProjectile.projectileSpeed = 0;
@@ -215,6 +215,10 @@ void setupPlayers()
 	SPR_setAnim(player1.playerSprite, 1);
 	player2.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player2.posX), fix16ToInt(player2.posY), TILE_ATTR(PAL1, 0, FALSE, TRUE));
 	SPR_update();
+
+	//set up projectiles
+	projectiles[0] = player1.playerProjectile;
+	projectiles[1] = player2.playerProjectile;
 }
 
 int countFrames()
@@ -319,10 +323,10 @@ void playerWalking()
 void setPlayerPosition()
 {
 	SPR_setPosition(player1.playerSprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY));
-	SPR_setPosition(player1.shieldSprite, fix16ToInt(player1.posX) + shieldOffset, fix16ToInt(player1.posY));
+	SPR_setPosition(player1.playerShield.shieldSprite, fix16ToInt(player1.posX) + shieldOffset, fix16ToInt(player1.posY));
 
 	SPR_setPosition(player2.playerSprite, fix16ToInt(player2.posX), fix16ToInt(player2.posY));
-	SPR_setPosition(player2.shieldSprite, fix16ToInt(player2.posX) - 0, fix16ToInt(player2.posY));
+	SPR_setPosition(player2.playerShield.shieldSprite, fix16ToInt(player2.posX) - 0, fix16ToInt(player2.posY));
 }
 
 void player1PosClamp()
@@ -358,18 +362,18 @@ void player2PosClamp()
 //ShieldTimers
 void p1ShieldTimer()
 {
-	if(player1.shieldActive)
+	if (player1.playerShield.shieldActive)
 	{
-		SPR_setVisibility(player1.shieldSprite, VISIBLE);
-		SPR_setAnim(player1.shieldSprite, 0);
+		SPR_setVisibility(player1.playerShield.shieldSprite, VISIBLE);
+		SPR_setAnim(player1.playerShield.shieldSprite, 0);
 		SPR_update();
 		//Start counting frames
 		p1ShieldFrameCount++;
 		if(p1ShieldFrameCount > shieldFrameTime)
 		{
-			SPR_setVisibility(player1.shieldSprite, HIDDEN);
+			SPR_setVisibility(player1.playerShield.shieldSprite, HIDDEN);
 			//SPR_setAnim(player1.shieldSprite, 0);
-			player1.shieldActive = FALSE;
+			player1.playerShield.shieldActive = FALSE;
 			p1ShieldFrameCount = 0;
 		}
 	}
@@ -377,16 +381,16 @@ void p1ShieldTimer()
 
 void p2ShieldTimer()
 {
-	if(player2.shieldActive)
+	if (player2.playerShield.shieldActive)
 	{
-		SPR_setVisibility(player2.shieldSprite, VISIBLE);
+		SPR_setVisibility(player2.playerShield.shieldSprite, VISIBLE);
 
 		//Start counting frames
 		p2ShieldFrameCount++;
 		if(p2ShieldFrameCount > shieldFrameTime)
 		{
-			SPR_setVisibility(player2.shieldSprite, HIDDEN);
-			player2.shieldActive = FALSE;
+			SPR_setVisibility(player2.playerShield.shieldSprite, HIDDEN);
+			player2.playerShield.shieldActive = FALSE;
 			p2ShieldFrameCount = 0;
 		}
 	}
@@ -395,13 +399,18 @@ void p2ShieldTimer()
 //Projectile
 void p1ProjectileLife()
 {
-	if(player1.playerProjectile.projectileAlive == TRUE)
+	if (player1.playerProjectile.projectileAlive == TRUE)
 	{
-		SPR_setVisibility(player1.playerProjectile.projectileSprite, VISIBLE);
-		player1.playerProjectile.projectileSpeed = projectileStartSpeed; 
+		player1.playerProjectile.projectileSpeed = projectileStartSpeed;
 		player1.playerProjectile.projXPos = fix16Add(player1.playerProjectile.projXPos, intToFix16(player1.playerProjectile.projectileSpeed));
 		//player1.playerProjectile.projYPos = fix16Add(player1.posX, player1.velX);
 		SPR_setPosition(player1.playerProjectile.projectileSprite, fix16ToInt(player1.playerProjectile.projXPos), fix16ToInt(player1.playerProjectile.projYPos));
+		if (player1.playerProjectile.projXPos > intToFix16(screenWidth))
+		{
+			SPR_setVisibility(player1.playerProjectile.projectileSprite, HIDDEN);
+			player1.playerProjectile.projXPos = player1.posX + intToFix16(projectileSpawnXOffset);
+			player1.playerProjectile.projectileAlive == FALSE;
+		}
 	}
 }
 
@@ -409,11 +418,25 @@ void p2ProjectileLife()
 {
 	if(player2.playerProjectile.projectileAlive == TRUE)
 	{
-		SPR_setVisibility(player2.playerProjectile.projectileSprite, VISIBLE);
 		player2.playerProjectile.projectileSpeed = projectileStartSpeed; 
 		player2.playerProjectile.projXPos = fix16Sub(player2.playerProjectile.projXPos, intToFix16(player2.playerProjectile.projectileSpeed));
 		//player1.playerProjectile.projYPos = fix16Add(player1.posX, player1.velX);
 		SPR_setPosition(player2.playerProjectile.projectileSprite, fix16ToInt(player2.playerProjectile.projXPos), fix16ToInt(player2.playerProjectile.projYPos));
+		if(player2.playerProjectile.projXPos < 0)
+		{
+			player2.playerProjectile.projXPos = player2.posX + intToFix16(projectileSpawnXOffset);
+			player2.playerProjectile.projectileAlive == FALSE;
+			SPR_setVisibility(player2.playerProjectile.projectileSprite, HIDDEN);
+		}
+	}
+}
+
+//Collision
+void checkProjShieldCollision()
+{
+	if (player1.playerProjectile.projectileAlive == TRUE && player1.playerShield.shieldActive == TRUE)
+	{
+		//.playerShield.shieldActiveif(player1.playerProjectile.projXPos < )
 	}
 }
 
@@ -441,15 +464,16 @@ int p1ButtonPressEvent(int button)
 	{
 		playerJumping(PLAYER_1, player1.horizontalNormal);
 	}
-	else if(button == B_BUTTON)
+	else if (button == B_BUTTON)
 	{
 		player1.playerProjectile.projectileAlive = TRUE;
+		SPR_setVisibility(player1.playerProjectile.projectileSprite, VISIBLE);
 		player1.playerProjectile.projYPos = intToFix16(fix16ToInt(player1.posY) + projectileSpawnYOffset);
 		player1.playerProjectile.projXPos = player1.posX + intToFix16(projectileSpawnXOffset);
 	}
-	else if(button == C_BUTTON)
+	else if (button == C_BUTTON)
 	{
-		player1.shieldActive = TRUE;
+		player1.playerShield.shieldActive = TRUE;
 	}
 	return (0);
 }
@@ -463,12 +487,13 @@ int p2ButtonPressEvent(int button)
 	else if( button == B_BUTTON)
 	{
 		player2.playerProjectile.projectileAlive = TRUE;
+		SPR_setVisibility(player2.playerProjectile.projectileSprite, VISIBLE);
 		player2.playerProjectile.projYPos = intToFix16(fix16ToInt(player2.posY) + projectileSpawnYOffset);
 		player2.playerProjectile.projXPos = player2.posX + intToFix16(projectileSpawnXOffset);
 	}
 	else if( button == C_BUTTON)
 	{
-		player2.shieldActive = TRUE;
+		player2.playerShield.shieldActive = TRUE;
 	}
 	return (0);
 }
