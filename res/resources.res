@@ -1,5 +1,5 @@
-IMAGE BGBuildings "tilemaps\FG_BuildingsandJunkWIP3.png" 0
-IMAGE BGClouds "tilemaps\BG_CloudsColor_Dither.png" 0
+IMAGE BGBuildings "tilemaps\BG_BuildingsandJunkTidy.png" 0
+IMAGE BGClouds "tilemaps\BG_CloudsColor_DitherHigh.png" 0
 
 //Images
 
