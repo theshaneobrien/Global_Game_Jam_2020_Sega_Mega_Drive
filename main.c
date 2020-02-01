@@ -9,6 +9,10 @@
 #include <genesis.h>
 #include <resources.h>
 
+//Screen
+int desiredScreenWidth = 320;
+int desiredScreenHeight = 224;
+
 //Background MAps
 Map *mapBackground;
 Map *cloudBackground;
@@ -24,6 +28,8 @@ struct Player{
 	int verticalNormal;
 	bool jumping;
 	bool isMoving;
+	int moveConstraintXLeft;
+	int moveConstraintXRight;
 };
 
 struct Player player1;
@@ -123,9 +129,9 @@ void setupPlayField()
 	//Background art is using Palette 3
 	VDP_setMapEx(PLAN_A, mapBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 1), 0, 0, 0, 0, 64, 28);
 
-	VDP_loadTileSet(BGClouds.tileset, 256, DMA);
+	VDP_loadTileSet(BGClouds.tileset, 320, DMA);
 	cloudBackground = unpackMap(BGClouds.map, NULL);
-	VDP_setMapEx(PLAN_B, cloudBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 256), 0, 0, 0, 0, 64, 28);
+	VDP_setMapEx(PLAN_B, cloudBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, 320), 0, 0, 0, 0, 64, 28);
 	//Set the background color
 	//Manually sets a pallete colour to a hex code
 	//First pallet is the background color
@@ -143,9 +149,13 @@ void setupPlayers()
 
 	//Set the players intial position
 	player1.posX = intToFix16(0);
-	player2.posX = intToFix16(256);
 	player1.posY = intToFix16(64 - playerHeight);
+	player1.moveConstraintXLeft = 0;
+	player1.moveConstraintXRight = (screenWidth / 2) - playerWidth;
+	player2.posX = intToFix16(256);
 	player2.posY = intToFix16(64 - playerHeight);
+	player2.moveConstraintXLeft = screenWidth / 2;
+	player2.moveConstraintXRight = 256;
 
 	//Insert the player sprites at the above positions
 	player1.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY), TILE_ATTR(PAL1, 0, FALSE, FALSE));
@@ -168,6 +178,7 @@ void gravity()
 	//Apply Velocity, need to use fix16Add to add two "floats" together
 	player1.posY = fix16Add(player1.posY, player1.velY);
 	player1.posX = fix16Add(player1.posX, player1.velX);
+
 	player2.posY = fix16Add(player2.posY, player2.velY);
 	player2.posX = fix16Add(player2.posX, player2.velX);
 
@@ -199,18 +210,19 @@ void gravity()
 
 void playerJumping(int player, int direction)
 {
+	int jumpDirection = direction;
 	if(player == PLAYER_1 && player1.jumping != TRUE)
 	{
 		player1.jumping = TRUE;
 		player1.velY = FIX16(jumpForce);
-		player1.velX = fix16Mul(intToFix16(player1.horizontalNormal), jumpDistance);
+		player1.velX = fix16Mul(intToFix16(direction), jumpDistance);
 	}
 
 	if (player == PLAYER_2 && player1.jumping != TRUE)
 	{
 		player2.jumping = TRUE;
 		player2.velY = FIX16(jumpForce);
-		player2.velX = fix16Mul(intToFix16(player2.horizontalNormal), jumpDistance);
+		player2.velX = fix16Mul(intToFix16(direction), jumpDistance);
 	}
 }
 
@@ -219,14 +231,14 @@ void playerWalking()
 	
 	if(player1.horizontalNormal == 1)
 	{
-		if(player1.posX < intToFix16((320 / 2) - playerWidth))
+		if(player1.posX < intToFix16(player1.moveConstraintXRight))
 		{
 			player1.posX += intToFix16(playerWidth / 2);
 		}
 	}
 	else if(player1.horizontalNormal == -1)
 	{
-		if(player1.posX > intToFix16(0))
+		if(player1.posX > intToFix16(player1.moveConstraintXLeft))
 		{
 			player1.posX -= intToFix16(playerWidth / 2);
 		}
@@ -234,14 +246,14 @@ void playerWalking()
 
 	if(player2.horizontalNormal == 1)
 	{
-		if(player2.posX > 256)
+		if(player2.posX < intToFix16(player2.moveConstraintXRight))
 		{
 			player2.posX += intToFix16(playerWidth / 2);
 		}
 	}
 	else if(player2.horizontalNormal == -1)
 	{
-		if(player2.posX > intToFix16((320 / 2)))
+		if(player2.posX > intToFix16(player2.moveConstraintXLeft))
 		{
 			player2.posX -= intToFix16(playerWidth / 2);
 		}

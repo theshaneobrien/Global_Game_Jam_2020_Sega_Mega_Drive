@@ -1,4 +1,4 @@
-IMAGE BGBuildings "tilemaps\FG_BuildingsandJunkWIP.png" 0
+IMAGE BGBuildings "tilemaps\FG_BuildingsandJunkWIP2.png" 0
 IMAGE BGClouds "tilemaps\BG_CloudsColor.png" 0
 
 //Images
