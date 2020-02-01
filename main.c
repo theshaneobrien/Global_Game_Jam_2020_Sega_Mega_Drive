@@ -30,6 +30,8 @@ struct Player{
 	bool isMoving;
 	int moveConstraintXLeft;
 	int moveConstraintXRight;
+	Sprite* shieldSprite;
+	bool shieldActive;
 };
 
 struct Player player1;
@@ -41,8 +43,13 @@ const int playerHeight = 64;
 const int jumpForce = -3;
 const fix16 jumpDistance = FIX16(0.75);
 
-const int groundHeight = 180;
+//Shield vars
+int p1ShieldFrameCount = 0;
+int p2ShieldFrameCount = 0;
+int shieldFrameTime = 5;
+int shieldOffset = 40;
 
+const int groundHeight = 180;
 
 int scrollSpeed = 1;
 int scrollAmount;
@@ -55,6 +62,10 @@ void gravity();
 void playerJumping();
 void playerWalking();
 void setPlayerPosition();
+
+//ShieldTimers
+void p1ShieldTimer();
+void p2ShieldTimer();
 
 fix16 SineEaseInOut(fix16 p);
 int countFrames();
@@ -77,6 +88,8 @@ int main()
 		SPR_update();
 		gravity();
 		setPlayerPosition();
+		p1ShieldTimer();
+		p2ShieldTimer();
 		//Wait for the frame to finish rendering
 		VDP_waitVSync();
 	}
@@ -109,13 +122,7 @@ void init()
 void setupMusic()
 {
 	XGM_setLoopNumber(10);
-	//Load PCM 65 with the start sound effect, how long it is
-	//XGM_setPCM(65, &start, 17664);
-	//Play PCM 65, Priority 1 signal from starflet, sound channel 2
-	//XGM_startPlayPCM(65, 1, SOUND_PCM_CH2);
-	//Play our Music
 	XGM_startPlay(&music);
-
 }
 
 void setupPlayField()
@@ -152,10 +159,15 @@ void setupPlayers()
 	player1.posY = intToFix16(64 - playerHeight);
 	player1.moveConstraintXLeft = 0;
 	player1.moveConstraintXRight = (screenWidth / 2) - playerWidth;
+	player1.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player1.posX) + shieldOffset, player1.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	SPR_setVisibility(player1.shieldSprite, HIDDEN);
+
 	player2.posX = intToFix16(256);
 	player2.posY = intToFix16(64 - playerHeight);
 	player2.moveConstraintXLeft = screenWidth / 2;
 	player2.moveConstraintXRight = 256;
+	player2.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player2.posX) - 0, player2.posY, TILE_ATTR(PAL1, 0, FALSE, TRUE));
+	SPR_setVisibility(player2.shieldSprite, HIDDEN);
 
 	//Insert the player sprites at the above positions
 	player1.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY), TILE_ATTR(PAL1, 0, FALSE, FALSE));
@@ -218,7 +230,7 @@ void playerJumping(int player, int direction)
 		player1.velX = fix16Mul(intToFix16(direction), jumpDistance);
 	}
 
-	if (player == PLAYER_2 && player1.jumping != TRUE)
+	if (player == PLAYER_2 && player2.jumping != TRUE)
 	{
 		player2.jumping = TRUE;
 		player2.velY = FIX16(jumpForce);
@@ -263,7 +275,45 @@ void playerWalking()
 void setPlayerPosition()
 {
 	SPR_setPosition(player1.playerSprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY));
+	SPR_setPosition(player1.shieldSprite, fix16ToInt(player1.posX) + shieldOffset, fix16ToInt(player1.posY));
+
 	SPR_setPosition(player2.playerSprite, fix16ToInt(player2.posX), fix16ToInt(player2.posY));
+	SPR_setPosition(player2.shieldSprite, fix16ToInt(player2.posX) - 0, fix16ToInt(player2.posY));
+}
+
+//ShieldTimers
+void p1ShieldTimer()
+{
+	if(player1.shieldActive)
+	{
+		SPR_setVisibility(player1.shieldSprite, VISIBLE);
+
+		//Start counting frames
+		p1ShieldFrameCount++;
+		if(p1ShieldFrameCount > shieldFrameTime)
+		{
+			SPR_setVisibility(player1.shieldSprite, HIDDEN);
+			player1.shieldActive = FALSE;
+			p1ShieldFrameCount = 0;
+		}
+	}
+}
+
+void p2ShieldTimer()
+{
+	if(player2.shieldActive)
+	{
+		SPR_setVisibility(player2.shieldSprite, VISIBLE);
+
+		//Start counting frames
+		p2ShieldFrameCount++;
+		if(p2ShieldFrameCount > shieldFrameTime)
+		{
+			SPR_setVisibility(player2.shieldSprite, HIDDEN);
+			player2.shieldActive = FALSE;
+			p2ShieldFrameCount = 0;
+		}
+	}
 }
 
 //Easings
@@ -288,11 +338,15 @@ int p1ButtonPressEvent(int button)
 {
 	if (button == A_BUTTON)
 	{
-		playerJumping(PLAYER_1, player1.horizontalNormal * 5);
+		playerJumping(PLAYER_1, player1.horizontalNormal);
 	}
-	else
+	else if( button == B_BUTTON)
 	{
-
+		
+	}
+	else if( button == C_BUTTON)
+	{
+		player1.shieldActive = TRUE;
 	}
 	return (0);
 }
@@ -302,6 +356,14 @@ int p2ButtonPressEvent(int button)
 	if (button == A_BUTTON)
 	{
 		playerJumping(PLAYER_2, player2.horizontalNormal);
+	}
+	else if( button == B_BUTTON)
+	{
+
+	}
+	else if( button == C_BUTTON)
+	{
+		player2.shieldActive = TRUE;
 	}
 	return (0);
 }
