@@ -32,6 +32,7 @@ struct Player{
 	int moveConstraintXRight;
 	Sprite* shieldSprite;
 	bool shieldActive;
+	struct Projectile playerProjectile;
 };
 
 struct Player player1;
@@ -48,6 +49,18 @@ int p1ShieldFrameCount = 0;
 int p2ShieldFrameCount = 0;
 int shieldFrameTime = 5;
 int shieldOffset = 40;
+
+//Projectile vars
+struct Projectile{
+	bool projectileAlive;
+	Sprite* projectileSprite;
+	int projXPos;
+	int projYPos;
+	int projectileSpeed;
+};
+int projectileSpawnXOffset = 32;
+int projectileSpawnYOffset = 32;
+int projectileStartSpeed = 3;
 
 const int groundHeight = 180;
 
@@ -72,6 +85,7 @@ fix16 SineEaseInOut(fix16 p);
 int countFrames();
 void ScrollBackground();
 void setupMusic();
+
 //Button Functions
 int p1ButtonPressEvent(int button);
 int p2ButtonPressEvent(int button);
@@ -155,14 +169,18 @@ void setupPlayers()
 	players[0] = player1;
 	players[1] = player2;
 
-	//Set the players intial position
+	//Set the players intial position and constraints
 	player1.posX = intToFix16(0);
 	player1.posY = intToFix16(64 - playerHeight);
 	player1.moveConstraintXLeft = 0;
 	player1.moveConstraintXRight = (screenWidth / 2) - playerWidth;
+	//Shield
 	player1.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player1.posX) + shieldOffset, player1.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 	SPR_setVisibility(player1.shieldSprite, HIDDEN);
-
+	//Projectile
+	player1.playerProjectile.projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(player1.posX) + projectileSpawnXOffset, fix16ToInt(player1.posY) + projectileSpawnYOffset, TILE_ATTR(PAL1,0,FALSE,FALSE));
+	player1.playerProjectile.projectileAlive = FALSE;
+	
 
 	player2.posX = intToFix16(256);
 	player2.posY = intToFix16(64 - playerHeight);
