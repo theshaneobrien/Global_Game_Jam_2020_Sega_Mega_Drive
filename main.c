@@ -29,8 +29,13 @@ char number1[3] = "1\0";
 char number2[3] = "2\0";
 char number3[3] = "3\0";
 char score[7] = "Score\0";
+char winner[8] = "Winner\0";
+char credits[23] = "Clare, Shane, Padraig\0";
+char logo[6] = "LOGO\0";
 
 //GameplayState
+bool atTitleScreen = TRUE;
+bool preGameCountdown = FALSE;
 bool hitFreeze = FALSE;
 int hitCounter = 0;
 int hitFreezeDuration = 10;
@@ -201,9 +206,30 @@ void init()
 	VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
 
 	SPR_init(0, 0, 0);
+	titleScreen();
+	setupMusic();
+}
+
+void titleScreen()
+{
+	//Set the background color
+	//Manually sets a pallete colour to a hex code
+	//First pallet is the background color
+	//SHANE THIS IS USEFUL
+	VDP_setPaletteColor(0, RGB24_TO_VDPCOLOR(0x00000));
+
+	VDP_setTextPlan(PLAN_A);
+	VDP_drawText(logo, 16, 10);
+	VDP_drawText(pressStart, 13,12);
+}
+
+void loadGameplay()
+{
+	atTitleScreen = FALSE;
+	VDP_clearPlan(PLAN_A, TRUE);
+	VDP_clearPlan(PLAN_B, TRUE);
 	setupPlayField();
 	setupPlayers();
-	setupMusic();
 }
 
 void setupMusic()
@@ -228,11 +254,6 @@ void setupPlayField()
 
 	cloudBackground = unpackMap(BGClouds.map, NULL);
 	VDP_setMapEx(PLAN_B, cloudBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, currentIndex), 0, 0, 0, 0, 64, 28);
-	//Set the background color
-	//Manually sets a pallete colour to a hex code
-	//First pallet is the background color
-	//SHANE THIS IS USEFUL
-	VDP_setPaletteColor(0, RGB24_TO_VDPCOLOR(0x00000));
 }
 
 void setupPlayers()
@@ -714,6 +735,10 @@ int buttonPressEvent(int playerNum, int button)
 	else if (button == C_BUTTON)
 	{
 		startShield(playerNum);
+	}
+	else if(button = START_BUTTON)
+	{
+		loadGameplay();
 	}
 	return (0);
 }
