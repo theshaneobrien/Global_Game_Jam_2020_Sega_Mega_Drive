@@ -98,7 +98,7 @@ void projectileMovement();
 void killProjectile(int projNum);
 //Collision
 void checkProjShieldCollision();
-void shieldCollision(int projNum);
+void shieldCollision(int projNum, int shieldHitNum);
 void checkProjPlayerCollision();
 int countFrames();
 void scrollBackground();
@@ -419,6 +419,7 @@ void killProjectile(int projNum)
 	projectiles[projNum].inPlay = FALSE;
 	SPR_setVisibility(projectiles[projNum].projectileSprite, HIDDEN);
 	projectiles[projNum].posX = intToFix16(screenWidth / 2);
+	projectiles[projNum].hitCount = 0;
 	inPlayRaquetBalls--;
 }
 
@@ -427,17 +428,17 @@ void checkProjShieldCollision()
 {
 	for (int projNum = 0; projNum < 2; projNum++)
 	{
-		for (int shieldNum = 0; shieldNum < 2; shieldNum++)
+		for (int shieldHitNum = 0; shieldHitNum < 2; shieldHitNum++)
 		{
-			if (projectiles[projNum].inPlay == TRUE && players[shieldNum].playerShield.shieldActive == TRUE)
+			if (projectiles[projNum].inPlay == TRUE && players[shieldHitNum].playerShield.shieldActive == TRUE)
 			{
-				if (projectiles[projNum].posX < intToFix16(players[shieldNum].playerShield.posX + shieldWidth - 6) && projectiles[projNum].posX + intToFix16(projectileHitSize) > intToFix16(players[shieldNum].playerShield.posX - 6))
+				if (projectiles[projNum].posX < intToFix16(players[shieldHitNum].playerShield.posX + shieldWidth - 6) && projectiles[projNum].posX + intToFix16(projectileHitSize) > intToFix16(players[shieldHitNum].playerShield.posX - 6))
 				{
-					if (projectiles[projNum].posY < intToFix16(players[shieldNum].playerShield.posY + shieldHeight) && projectiles[projNum].posY + intToFix16(projectileHitSize) >= intToFix16(players[shieldNum].playerShield.posY))
+					if (projectiles[projNum].posY < intToFix16(players[shieldHitNum].playerShield.posY + shieldHeight) && projectiles[projNum].posY + intToFix16(projectileHitSize) >= intToFix16(players[shieldHitNum].playerShield.posY))
 					{
-						if (projectiles[projNum].projectileOwner != players[shieldNum].playerShield.shieldOwner)
+						if (projectiles[projNum].projectileOwner != players[shieldHitNum].playerShield.shieldOwner)
 						{
-							shieldCollision(projNum);
+							shieldCollision(projNum, shieldHitNum);
 						}
 					}
 				}
@@ -446,8 +447,9 @@ void checkProjShieldCollision()
 	}
 }
 
-void shieldCollision(int projNum)
+void shieldCollision(int projNum, int shieldHitNum)
 {
+	projectiles[projNum].projectileOwner = shieldHitNum;
 	projectiles[projNum].direction = projectiles[projNum].direction * -1;
 	projectiles[projNum].hitCount++;
 	if (projectiles[projNum].hitCount > 3)
@@ -667,8 +669,8 @@ char str_y2[16] = "0";
 void updateDebug()
 {
 
-	int debugInfo1 = players[1].playerShield.posX;
-	int debugInfo2 = players[1].playerShield.posX;
+	int debugInfo1 = projectiles[0].hitCount;
+	int debugInfo2 = projectiles[1].hitCount;
 	sprintf(strPosY, "%d", inPlayRaquetBalls);
 	sprintf(str_y1, "%d", debugInfo1);
 	sprintf(str_y2, "%d", debugInfo2);
