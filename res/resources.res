@@ -13,6 +13,8 @@ SPRITE debug "sprites\debug.png" 1 1 0 15
 
 //Music
 XGM music "sound/ggj2020.vgm"
+XGM winnermusic "sound/winner.vgm"
+XGM playerselect "sound/playerselect.vgm"
 WAV shield "sound/shield.wav" 5
 WAV deflect "sound/deflect.wav" 5
 WAV shoot "sound/shoot.wav" 5
