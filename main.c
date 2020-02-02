@@ -197,7 +197,9 @@ int main()
 					countdown++;
 
 					if (countdown > 330)
-					{
+					{	
+						VDP_fadePal(PAL3, BGBuildings.palette->data, palette_black, 60, 0);
+						VDP_waitFadeCompletion();
 						SYS_hardReset();
 					}
 				}
