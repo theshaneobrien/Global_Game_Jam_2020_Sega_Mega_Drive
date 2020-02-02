@@ -18,6 +18,11 @@
 int desiredScreenWidth = 320;
 int desiredScreenHeight = 224;
 
+//GameplayState
+bool hitFreeze = FALSE;
+int hitCounter = 0;
+int hitFreezeDuration = 10;
+
 //Background MAps
 Map *mapBackground;
 Map *cloudBackground;
@@ -107,6 +112,7 @@ int frameCount = 0;
 void init();
 void setupPlayField();
 void setupPlayers();
+void hitFreezeCount();
 void gravity();
 void playerJumping();
 void playerWalking();
@@ -148,18 +154,22 @@ int main()
 	init();
 	while (1)
 	{
-		countFrames();
-		scrollBackground();
-		//Updates Sprites Position / Animation Frame
-		SPR_update();
-		gravity();
-		setPlayerPosition();
-		shieldTimer();
-		projectileMovement();
-		p1WalkingCounter();
-		p2WalkingCounter();
-		checkProjShieldCollision();
-		checkProjPlayerCollision();
+		hitFreezeCount();
+		if(hitFreeze == FALSE)
+		{
+			countFrames();
+			scrollBackground();
+			//Updates Sprites Position / Animation Frame
+			SPR_update();
+			gravity();
+			setPlayerPosition();
+			shieldTimer();
+			projectileMovement();
+			p1WalkingCounter();
+			p2WalkingCounter();
+			checkProjShieldCollision();
+			checkProjPlayerCollision();
+		}
 		//Wait for the frame to finish rendering
 		VDP_waitVSync();
 		updateDebug();
@@ -286,6 +296,19 @@ void setupPlayers()
 	// debug4 = SPR_addSprite(&debug, players[1].hitbox.posY, players[1].hitbox.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 }
 
+void hitFreezeCount()
+{
+	if(hitFreeze == TRUE)
+	{
+		hitCounter++;
+		if(hitCounter > hitFreezeDuration)
+		{
+			hitCounter = 0;
+			hitFreeze = FALSE;
+		}
+	}
+} 
+
 int countFrames()
 {
 	frameCount++;
@@ -298,29 +321,29 @@ int countFrames()
 
 void gravity()
 {
-		for (int playerNum = 0; playerNum < 2; playerNum++)
+	for (int playerNum = 0; playerNum < 2; playerNum++)
+	{
+		//Apply Velocity, need to use fix16Add to add two "floats" together
+		players[playerNum].posY = fix16Add(players[playerNum].posY, players[playerNum].velY);
+		players[playerNum].posX = fix16Add(players[playerNum].posX, players[playerNum].velX);
+		if (fix16ToInt(players[playerNum].posY) + playerHeight >= groundHeight)
 		{
-			//Apply Velocity, need to use fix16Add to add two "floats" together
-			players[playerNum].posY = fix16Add(players[playerNum].posY, players[playerNum].velY);
-			players[playerNum].posX = fix16Add(players[playerNum].posX, players[playerNum].velX);
-			if (fix16ToInt(players[playerNum].posY) + playerHeight >= groundHeight)
+			players[playerNum].jumping = FALSE;
+			players[playerNum].velY = intToFix16(0);
+			players[playerNum].posY = intToFix16(groundHeight - playerHeight);
+			players[playerNum].velX = intToFix16(0);
+			if (players[playerNum].jumping == FALSE && players[playerNum].isMovingRight == FALSE && players[playerNum].isMovingLeft == FALSE && players[playerNum].grounded == FALSE)
 			{
-				players[playerNum].jumping = FALSE;
-				players[playerNum].velY = intToFix16(0);
-				players[playerNum].posY = intToFix16(groundHeight - playerHeight);
-				players[playerNum].velX = intToFix16(0);
-				if (players[playerNum].jumping == FALSE && players[playerNum].isMovingRight == FALSE && players[playerNum].isMovingLeft == FALSE && players[playerNum].grounded == FALSE)
-				{
-					SPR_setAnim(players[playerNum].playerSprite, ANIM_IDLE);
-					players[playerNum].grounded = TRUE;
-				}
-			}
-			else
-			{
-				players[playerNum].velY = fix16Add(players[playerNum].velY, 6);
-				playerPosClamp();
+				//SPR_setAnim(players[playerNum].playerSprite, ANIM_IDLE);
+				players[playerNum].grounded = TRUE;
 			}
 		}
+		else
+		{
+			players[playerNum].velY = fix16Add(players[playerNum].velY, 6);
+			playerPosClamp();
+		}
+	}
 }
 
 void playerJumping(int player, int direction)
@@ -602,6 +625,7 @@ void checkProjShieldCollision()
 
 void shieldCollision(int projNum, int shieldHitNum)
 {
+	hitFreeze = TRUE;
 	projectiles[projNum].currentOwner = shieldHitNum;
 	players[projectiles[projNum].originalOwner].hasActiveProjectile = FALSE;
 	projectiles[projNum].direction = projectiles[projNum].direction * -1;
@@ -637,6 +661,7 @@ void checkProjPlayerCollision()
 
 void playerCollision(int projNum, int playerHitNum)
 {
+	hitFreeze = TRUE;
 	if(playerHitNum == 0)
 	{
 		players[1].score++;
