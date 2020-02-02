@@ -9,38 +9,53 @@
 #include <genesis.h>
 #include <resources.h>
 
+//Screen
+int desiredScreenWidth = 320;
+int desiredScreenHeight = 224;
+
 //Background MAps
 Map *mapBackground;
 Map *cloudBackground;
 
 //Projectile vars
-struct Projectile{
+struct Projectile
+{
 	bool projectileAlive;
-	Sprite* projectileSprite;
+	Sprite *projectileSprite;
 	fix16 posX;
 	fix16 posY;
 	int projectileSpeed;
 	int projectileOwner;
+	int direction;
 };
 int projectileHitSize = 8;
 int projectileSpawnXOffset = 32;
 int projectileSpawnYOffset = 32;
 int projectileStartSpeed = 10;
+struct Projectile projectile1;
+struct Projectile projectile2;
 struct Projectile projectiles[2];
 
 //Shield vars
-struct Shield{
-	Sprite* shieldSprite;
+struct Shield
+{
+	Sprite *shieldSprite;
 	bool shieldActive;
+	int shieldOwner;
+	int posX;
+	int posY;
 };
 int p1ShieldFrameCount = 0;
 int p2ShieldFrameCount = 0;
 int shieldFrameTime = 5;
 int shieldOffset = 40;
+int shieldHeight = 64;
 int shieldWidth = 32;
+struct Shield shields[2];
 
 //Player
-struct Player{
+struct Player
+{
 	Sprite *playerSprite;
 	fix16 posX;
 	fix16 velX;
@@ -52,7 +67,6 @@ struct Player{
 	bool isMoving;
 	int moveConstraintXLeft;
 	int moveConstraintXRight;
-	struct Projectile playerProjectile;
 	struct Shield playerShield;
 };
 
@@ -84,12 +98,11 @@ void player2PosClamp();
 void p1ShieldTimer();
 void p2ShieldTimer();
 //ProjectileUpdates
-void p1ProjectileLife();
+void projectileMovement();
 void p2ProjectileLife();
 //Collision
-void chackBallShieldCollision();
+void checkProjShieldCollision();
 
-//fix16 SineEaseInOut(fix16 p);
 int countFrames();
 void ScrollBackground();
 void setupMusic();
@@ -97,6 +110,12 @@ void setupMusic();
 //Button Functions
 int p1ButtonPressEvent(int button);
 int p2ButtonPressEvent(int button);
+
+//Debug
+Sprite *debug1;
+Sprite *debug2;
+Sprite *debug3;
+Sprite *debug4;
 
 static void myJoyHandler(u16 joy, u16 changed, u16 state);
 
@@ -113,12 +132,13 @@ int main()
 		setPlayerPosition();
 		p1ShieldTimer();
 		p2ShieldTimer();
-		p1ProjectileLife();
+		projectileMovement();
 		p2ProjectileLife();
+		checkProjShieldCollision();
 		//Wait for the frame to finish rendering
 		VDP_waitVSync();
 	}
-	return(0);
+	return (0);
 }
 
 void init()
@@ -130,7 +150,7 @@ void init()
 	//Set up the resolution
 	VDP_setScreenWidth320();
 	VDP_setPlanSize(64, 32);
-	VDP_setScrollingMode(HSCROLL_PLANE,VSCROLL_PLANE);
+	VDP_setScrollingMode(HSCROLL_PLANE, VSCROLL_PLANE);
 
 	SPR_init(0, 0, 0);
 	setupPlayField();
@@ -151,9 +171,9 @@ void setupPlayField()
 
 	int currentIndex = TILE_USERINDEX;
 	VDP_loadTileSet(BGBuildings.tileset, currentIndex, DMA);
-	currentIndex += BGBuildings.tileset->numTile;	
+	currentIndex += BGBuildings.tileset->numTile;
 	VDP_loadTileSet(BGClouds.tileset, currentIndex, DMA);
-	
+
 	mapBackground = unpackMap(BGBuildings.map, NULL);
 	//Background art is using Palette 3
 	VDP_setMapEx(PLAN_A, mapBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, TILE_USERINDEX), 0, 0, 0, 0, 64, 28);
@@ -168,7 +188,7 @@ void setupPlayField()
 }
 
 void setupPlayers()
-{ 
+{
 	//Sprites are using Palette 1
 	VDP_setPalette(PAL1, player1Sprite.palette->data);
 
@@ -181,16 +201,12 @@ void setupPlayers()
 	player1.moveConstraintXLeft = 0;
 	player1.moveConstraintXRight = (screenWidth / 2) - playerWidth;
 	//Shield
-	player1.playerShield.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player1.posX) + shieldOffset, player1.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	player1.playerShield.shieldOwner = PLAYER_1;
+	player1.playerShield.posX = fix16ToInt(player1.posX) + shieldOffset;
+	player1.playerShield.posY = player1.posY;
+	player1.playerShield.shieldSprite = SPR_addSprite(&shieldSprite, player1.playerShield.posX, player1.playerShield.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 	SPR_setVisibility(player1.playerShield.shieldSprite, HIDDEN);
-	//Projectile
-	player1.playerProjectile.projectileOwner = PLAYER_1;
-	player1.playerProjectile.projectileAlive = FALSE;
-	player1.playerProjectile.projectileSpeed = 0;
-	player1.playerProjectile.posX = player1.posX + intToFix16(projectileSpawnXOffset);
-	player1.playerProjectile.posY = intToFix16(fix16ToInt(player1.posY) + projectileSpawnYOffset);
-	player1.playerProjectile.projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(player1.posX) + projectileSpawnXOffset, player1.playerProjectile.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	SPR_setVisibility(player1.playerProjectile.projectileSprite, HIDDEN);
+	
 
 	//Set the players intial position and constraints
 	player2.posX = intToFix16(256);
@@ -198,16 +214,11 @@ void setupPlayers()
 	player2.moveConstraintXLeft = screenWidth / 2;
 	player2.moveConstraintXRight = 256;
 	//Shield
-	player2.playerShield.shieldSprite = SPR_addSprite(&shieldSprite, fix16ToInt(player2.posX) - 0, player2.posY, TILE_ATTR(PAL1, 0, FALSE, TRUE));
+	player2.playerShield.shieldOwner = PLAYER_2;
+	player2.playerShield.posX = fix16ToInt(player2.posX) - 0;
+	player2.playerShield.posY = player2.posY;
+	player2.playerShield.shieldSprite = SPR_addSprite(&shieldSprite, player2.playerShield.posX, player2.playerShield.posY, TILE_ATTR(PAL1, 0, FALSE, TRUE));
 	SPR_setVisibility(player2.playerShield.shieldSprite, HIDDEN);
-	//Projectile
-	player2.playerProjectile.projectileOwner = PLAYER_2;
-	player2.playerProjectile.projectileAlive = FALSE;
-	player2.playerProjectile.projectileSpeed = 0;
-	player2.playerProjectile.posX = player2.posX + intToFix16(projectileSpawnXOffset);
-	player2.playerProjectile.posY = intToFix16(fix16ToInt(player2.posY) + projectileSpawnYOffset);
-	player2.playerProjectile.projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(player2.posX) + projectileSpawnXOffset, player2.playerProjectile.posY, TILE_ATTR(PAL1, 0, FALSE, TRUE));
-	SPR_setVisibility(player2.playerProjectile.projectileSprite, HIDDEN);
 
 	//Insert the player sprites at the above positions
 	player1.playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY), TILE_ATTR(PAL1, 0, FALSE, FALSE));
@@ -216,14 +227,41 @@ void setupPlayers()
 	SPR_update();
 
 	//set up projectiles
-	projectiles[0] = player1.playerProjectile;
-	projectiles[1] = player2.playerProjectile;
+	projectiles[0] = projectile1;
+	projectiles[0].projectileOwner = PLAYER_1;
+	projectiles[0].direction = 1;
+	projectiles[0].projectileAlive = FALSE;
+	projectiles[0].projectileSpeed = 0;
+	projectiles[0].posX = player1.posX + intToFix16(projectileSpawnXOffset);
+	projectiles[0].posY = intToFix16(fix16ToInt(player1.posY) + projectileSpawnYOffset);
+	projectiles[0].projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(player1.posX) + projectileSpawnXOffset, projectiles[0].posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	SPR_setVisibility(projectiles[0].projectileSprite, HIDDEN);
+
+	projectiles[1] = projectile2;
+	projectiles[1].projectileOwner = PLAYER_1;
+	projectiles[1].direction = 1;
+	projectiles[1].projectileAlive = FALSE;
+	projectiles[1].projectileSpeed = 0;
+	projectiles[1].posX = player1.posX + intToFix16(projectileSpawnXOffset);
+	projectiles[1].posY = intToFix16(fix16ToInt(player1.posY) + projectileSpawnYOffset);
+	projectiles[1].projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(player1.posX) + projectileSpawnXOffset, projectiles[1].posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	SPR_setVisibility(projectiles[1].projectileSprite, HIDDEN);
+
+	//set up shields
+	shields[0] = player1.playerShield;
+	shields[1] = player2.playerShield;
+
+	//debug
+	debug1 = SPR_addSprite(&debug, player2.playerShield.posX + shieldWidth, player2.playerShield.posY + shieldHeight, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	debug2 = SPR_addSprite(&debug, player2.playerShield.posX, player2.playerShield.posY + shieldHeight, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	debug3 = SPR_addSprite(&debug, player2.playerShield.posX + shieldWidth, player2.playerShield.posY + shieldHeight, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	debug4 = SPR_addSprite(&debug, player2.playerShield.posX, player2.playerShield.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 }
 
 int countFrames()
 {
 	frameCount++;
-	if(frameCount>60)
+	if (frameCount > 60)
 	{
 		frameCount = 0;
 	}
@@ -270,7 +308,7 @@ void gravity()
 void playerJumping(int player, int direction)
 {
 	int jumpDirection = direction;
-	if(player == PLAYER_1 && player1.jumping != TRUE)
+	if (player == PLAYER_1 && player1.jumping != TRUE)
 	{
 		player1.jumping = TRUE;
 		player1.velY = FIX16(jumpForce);
@@ -287,32 +325,32 @@ void playerJumping(int player, int direction)
 
 void playerWalking()
 {
-	
-	if(player1.horizontalNormal == 1)
+
+	if (player1.horizontalNormal == 1)
 	{
-		if(player1.posX < intToFix16(player1.moveConstraintXRight))
+		if (player1.posX < intToFix16(player1.moveConstraintXRight))
 		{
 			player1.posX += intToFix16(playerWidth / 2);
 		}
 	}
-	else if(player1.horizontalNormal == -1)
+	else if (player1.horizontalNormal == -1)
 	{
-		if(player1.posX > intToFix16(player1.moveConstraintXLeft))
+		if (player1.posX > intToFix16(player1.moveConstraintXLeft))
 		{
 			player1.posX -= intToFix16(playerWidth / 2);
 		}
 	}
 
-	if(player2.horizontalNormal == 1)
+	if (player2.horizontalNormal == 1)
 	{
-		if(player2.posX < intToFix16(player2.moveConstraintXRight))
+		if (player2.posX < intToFix16(player2.moveConstraintXRight))
 		{
 			player2.posX += intToFix16(playerWidth / 2);
 		}
 	}
-	else if(player2.horizontalNormal == -1)
+	else if (player2.horizontalNormal == -1)
 	{
-		if(player2.posX > intToFix16(player2.moveConstraintXLeft))
+		if (player2.posX > intToFix16(player2.moveConstraintXLeft))
 		{
 			player2.posX -= intToFix16(playerWidth / 2);
 		}
@@ -321,22 +359,33 @@ void playerWalking()
 
 void setPlayerPosition()
 {
+	//Debug
+	SPR_setPosition(debug1, player2.playerShield.posX -4, player2.playerShield.posY - 4);
+	SPR_setPosition(debug2, player2.playerShield.posX + 12, player2.playerShield.posY - 4);
+	SPR_setPosition(debug3, player2.playerShield.posX + 12, player2.playerShield.posY + shieldHeight - 4);
+	SPR_setPosition(debug4, player2.playerShield.posX -4, player2.playerShield.posY + shieldHeight - 4);
+
+	//Players
 	SPR_setPosition(player1.playerSprite, fix16ToInt(player1.posX), fix16ToInt(player1.posY));
 	SPR_setPosition(player1.playerShield.shieldSprite, fix16ToInt(player1.posX) + shieldOffset, fix16ToInt(player1.posY));
+	player1.playerShield.posX = fix16ToInt(player1.posX) + shieldOffset;
+	player1.playerShield.posY = player1.posY;
 
 	SPR_setPosition(player2.playerSprite, fix16ToInt(player2.posX), fix16ToInt(player2.posY));
 	SPR_setPosition(player2.playerShield.shieldSprite, fix16ToInt(player2.posX) - 0, fix16ToInt(player2.posY));
+	player2.playerShield.posX = fix16ToInt(player2.posX) - 0;
+	player2.playerShield.posY = fix16ToInt(player2.posY);
 }
 
 void player1PosClamp()
 {
-	if(player1.posX < intToFix16(player1.moveConstraintXLeft))
+	if (player1.posX < intToFix16(player1.moveConstraintXLeft))
 	{
 		player1.posX = intToFix16(0);
 		player1.velX = intToFix16(0);
 	}
 
-	if(player1.posX > intToFix16(player1.moveConstraintXRight))
+	if (player1.posX > intToFix16(player1.moveConstraintXRight))
 	{
 		player1.posX = intToFix16(player1.moveConstraintXRight);
 		player1.velX = intToFix16(0);
@@ -345,13 +394,13 @@ void player1PosClamp()
 
 void player2PosClamp()
 {
-	if(player2.posX < intToFix16(player2.moveConstraintXLeft))
+	if (player2.posX < intToFix16(player2.moveConstraintXLeft))
 	{
 		player2.posX = intToFix16(player2.moveConstraintXLeft);
 		player2.velX = intToFix16(0);
 	}
 
-	if(player2.posX > intToFix16(player2.moveConstraintXRight))
+	if (player2.posX > intToFix16(player2.moveConstraintXRight))
 	{
 		player2.posX = intToFix16(player2.moveConstraintXRight);
 		player2.velX = intToFix16(0);
@@ -368,7 +417,7 @@ void p1ShieldTimer()
 		SPR_update();
 		//Start counting frames
 		p1ShieldFrameCount++;
-		if(p1ShieldFrameCount > shieldFrameTime)
+		if (p1ShieldFrameCount > shieldFrameTime)
 		{
 			SPR_setVisibility(player1.playerShield.shieldSprite, HIDDEN);
 			//SPR_setAnim(player1.shieldSprite, 0);
@@ -385,8 +434,8 @@ void p2ShieldTimer()
 		SPR_setVisibility(player2.playerShield.shieldSprite, VISIBLE);
 
 		//Start counting frames
-		p2ShieldFrameCount++;
-		if(p2ShieldFrameCount > shieldFrameTime)
+		//p2ShieldFrameCount++;
+		if (p2ShieldFrameCount > shieldFrameTime)
 		{
 			SPR_setVisibility(player2.playerShield.shieldSprite, HIDDEN);
 			player2.playerShield.shieldActive = FALSE;
@@ -396,63 +445,68 @@ void p2ShieldTimer()
 }
 
 //Projectile
-void p1ProjectileLife()
+void projectileMovement()
 {
-	if (player1.playerProjectile.projectileAlive == TRUE)
+	for (int i = 0; i < 2; i++)
 	{
-		player1.playerProjectile.projectileSpeed = projectileStartSpeed;
-		player1.playerProjectile.posX = fix16Add(player1.playerProjectile.posX, intToFix16(player1.playerProjectile.projectileSpeed));
-		//player1.playerProjectile.posY = fix16Add(player1.posX, player1.velX);
-		SPR_setPosition(player1.playerProjectile.projectileSprite, fix16ToInt(player1.playerProjectile.posX), fix16ToInt(player1.playerProjectile.posY));
-		if (player1.playerProjectile.posX > intToFix16(screenWidth))
+		if (projectiles[i].projectileAlive == TRUE)
 		{
-			SPR_setVisibility(player1.playerProjectile.projectileSprite, HIDDEN);
-			player1.playerProjectile.posX = player1.posX + intToFix16(projectileSpawnXOffset);
-			player1.playerProjectile.projectileAlive == FALSE;
+			projectiles[i].projectileSpeed = projectileStartSpeed;
+			projectiles[i].posX = fix16Add(projectiles[i].posX, intToFix16(projectiles[i].projectileSpeed * projectiles[i].direction));
+			//player1.playerProjectile.posY = fix16Add(player1.posX, player1.velX);
+			SPR_setPosition(projectiles[i].projectileSprite, fix16ToInt(projectiles[i].posX), fix16ToInt(projectiles[i].posY));
+			if (projectiles[i].posX > intToFix16(screenWidth))
+			{
+				SPR_setVisibility(projectiles[i].projectileSprite, HIDDEN);
+				projectiles[i].posX = player1.posX + intToFix16(projectileSpawnXOffset);
+				projectiles[i].projectileAlive == FALSE;
+			}
 		}
 	}
+	
+	
 }
 
 void p2ProjectileLife()
 {
-	if(player2.playerProjectile.projectileAlive == TRUE)
-	{
-		player2.playerProjectile.projectileSpeed = projectileStartSpeed; 
-		player2.playerProjectile.posX = fix16Sub(player2.playerProjectile.posX, intToFix16(player2.playerProjectile.projectileSpeed));
-		//player1.playerProjectile.posY = fix16Add(player1.posX, player1.velX);
-		SPR_setPosition(player2.playerProjectile.projectileSprite, fix16ToInt(player2.playerProjectile.posX), fix16ToInt(player2.playerProjectile.posY));
-		if(player2.playerProjectile.posX < 0)
-		{
-			player2.playerProjectile.posX = player2.posX + intToFix16(projectileSpawnXOffset);
-			player2.playerProjectile.projectileAlive == FALSE;
-			SPR_setVisibility(player2.playerProjectile.projectileSprite, HIDDEN);
-		}
-	}
+	// if (player2.playerProjectile.projectileAlive == TRUE)
+	// {
+	// 	player2.playerProjectile.projectileSpeed = projectileStartSpeed;
+	// 	player2.playerProjectile.posX = fix16Sub(player2.playerProjectile.posX, intToFix16(player2.playerProjectile.projectileSpeed));
+	// 	//player1.playerProjectile.posY = fix16Add(player1.posX, player1.velX);
+	// 	SPR_setPosition(player2.playerProjectile.projectileSprite, fix16ToInt(player2.playerProjectile.posX), fix16ToInt(player2.playerProjectile.posY));
+	// 	if (player2.playerProjectile.posX < 0)
+	// 	{
+	// 		player2.playerProjectile.posX = player2.posX + intToFix16(projectileSpawnXOffset);
+	// 		//player2.playerProjectile.projectileAlive == FALSE;
+	// 		//SPR_setVisibility(player2.playerProjectile.projectileSprite, HIDDEN);
+	// 	}
+	// }
 }
 
 //Collision
 void checkProjShieldCollision()
 {
-	if (player1.playerProjectile.projectileAlive == TRUE && player1.playerShield.shieldActive == TRUE)
+	if (projectiles[0].projectileAlive && player2.playerShield.shieldActive)
 	{
-		//.playerShield.shieldActiveif(player1.playerProjectile.posX < )
+		if (projectiles[0].posX < intToFix16(player2.playerShield.posX + shieldWidth) && projectiles[0].posX + intToFix16(projectileHitSize) > intToFix16(player2.playerShield.posX))
+		{
+			if (projectiles[0].posY < intToFix16(player2.playerShield.posY + shieldHeight) && projectiles[0].posY + intToFix16(projectileHitSize) >= intToFix16(player2.playerShield.posY))
+			{
+				//player1.playerProjectile.direction = -1;
+				SPR_setVisibility(projectiles[0].projectileSprite, HIDDEN);
+			}
+		}
 	}
-}
-
-//Easings
-fix16 SineEaseInOut(fix16 p)
-{
-	return FIX16(0.5 * (1 - cosFix16( p * 3 )));
 }
 
 //Background Effects
 void ScrollBackground()
 {
-	if(frameCount % 6 == 0)
+	if (frameCount % 6 == 0)
 	{
-		
-	VDP_setHorizontalScroll(PLAN_B, scrollAmount -= scrollSpeed);
-		
+
+		VDP_setHorizontalScroll(PLAN_B, scrollAmount -= scrollSpeed);
 	}
 }
 
@@ -465,10 +519,11 @@ int p1ButtonPressEvent(int button)
 	}
 	else if (button == B_BUTTON)
 	{
-		player1.playerProjectile.projectileAlive = TRUE;
-		SPR_setVisibility(player1.playerProjectile.projectileSprite, VISIBLE);
-		player1.playerProjectile.posY = intToFix16(fix16ToInt(player1.posY) + projectileSpawnYOffset);
-		player1.playerProjectile.posX = player1.posX + intToFix16(projectileSpawnXOffset);
+		projectiles[0].projectileAlive = FALSE;
+		projectiles[0].posY = intToFix16(fix16ToInt(player1.posY) + projectileSpawnYOffset);
+		projectiles[0].posX = player1.posX + intToFix16(projectileSpawnXOffset);
+		projectiles[0].projectileAlive = TRUE;
+		SPR_setVisibility(projectiles[0].projectileSprite, VISIBLE);
 	}
 	else if (button == C_BUTTON)
 	{
@@ -483,14 +538,15 @@ int p2ButtonPressEvent(int button)
 	{
 		playerJumping(PLAYER_2, player2.horizontalNormal);
 	}
-	else if( button == B_BUTTON)
+	else if (button == B_BUTTON)
 	{
-		player2.playerProjectile.projectileAlive = TRUE;
-		SPR_setVisibility(player2.playerProjectile.projectileSprite, VISIBLE);
-		player2.playerProjectile.posY = intToFix16(fix16ToInt(player2.posY) + projectileSpawnYOffset);
-		player2.playerProjectile.posX = player2.posX + intToFix16(projectileSpawnXOffset);
+		projectiles[1].projectileAlive = FALSE;
+		projectiles[1].posY = intToFix16(fix16ToInt(player2.posY) + projectileSpawnYOffset);
+		projectiles[1].posX = player2.posX + intToFix16(projectileSpawnXOffset);
+		projectiles[1].projectileAlive = TRUE;
+		SPR_setVisibility(projectiles[1].projectileSprite, VISIBLE);
 	}
-	else if( button == C_BUTTON)
+	else if (button == C_BUTTON)
 	{
 		player2.playerShield.shieldActive = TRUE;
 	}
@@ -512,12 +568,12 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 		{
 			p1ButtonPressEvent(A_BUTTON);
 		}
-		
+
 		if (state & BUTTON_B)
 		{
 			p1ButtonPressEvent(B_BUTTON);
 		}
-		
+
 		if (state & BUTTON_C)
 		{
 			p1ButtonPressEvent(C_BUTTON);
