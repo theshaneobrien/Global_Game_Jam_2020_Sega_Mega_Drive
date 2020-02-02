@@ -6,17 +6,29 @@
 #define PLAYER_1 0
 #define PLAYER_2 1
 
-#define ANIM_IDLE 3
-#define ANIM_WALKING 2
-#define ANIM_JUMPING 1
-#define ANIM_DEFLECT 0
+#define ANIM_IDLE 4
+#define ANIM_WALKING 3
+#define ANIM_JUMPING 2
+#define ANIM_DEFLECT 1
+#define ANIM_ATTACK 0
 
 #include <genesis.h>
 #include <resources.h>
+#include <string.h>
 
 //Screen
 int desiredScreenWidth = 320;
 int desiredScreenHeight = 224;
+
+//Strings
+char player1[10] = "Player 1\0";
+char player2[10] = "Player 2\0";
+char pressStart[13] = "Press Start\0";
+char gameStarting[15] = "Game Starting\0";
+char number1[3] = "1\0";
+char number2[3] = "2\0";
+char number3[3] = "3\0";
+char score[7] = "Score\0";
 
 //GameplayState
 bool hitFreeze = FALSE;
@@ -555,6 +567,7 @@ int fireProjectile(int playerNum)
 			projectiles[projNum].currentOwner = playerNum;
 			projectiles[projNum].originalOwner = playerNum;
 			players[playerNum].hasActiveProjectile = TRUE;
+			SPR_setAnim(players[playerNum].playerSprite, ANIM_ATTACK);
 			if(playerNum == PLAYER_2)
 			{
 				projectiles[projNum].direction = -1;
@@ -565,6 +578,8 @@ int fireProjectile(int playerNum)
 			SPR_setVisibility(projectiles[projNum].projectileSprite, VISIBLE);
 			projectiles[projNum].inPlay = TRUE;
 			inPlayRaquetBalls++;
+			
+			SPR_setAnim(players[playerNum].playerSprite, ANIM_IDLE);
 			return 1;
 		}
 	}
