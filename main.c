@@ -47,10 +47,8 @@ struct Shield
 int p1ShieldFrameCount = 0;
 int p2ShieldFrameCount = 0;
 int shieldFrameTime = 5;
-int shieldOffset = 40;
 int shieldHeight = 64;
 int shieldWidth = 32;
-struct Shield shields[2];
 
 //Player
 struct Player
@@ -67,6 +65,7 @@ struct Player
 	int moveConstraintXLeft;
 	int moveConstraintXRight;
 	struct Shield playerShield;
+	int shieldOffset;
 };
 struct Player players[2];
 
@@ -186,17 +185,15 @@ void setupPlayers()
 	//Sprites are using Palette 1
 	VDP_setPalette(PAL1, player1Sprite.palette->data);
 
-	players[0] = players[0];
-	players[1] = players[1];
-
 	//Set the players intial position and constraints
 	players[0].posX = intToFix16(0);
 	players[0].posY = intToFix16(groundHeight - playerHeight);
-	players[0].moveConstraintXLeft = 0;
+	players[0].moveConstraintXLeft = 0;players[0].shieldOffset;
 	players[0].moveConstraintXRight = (screenWidth / 2) - playerWidth;
+	players[0].shieldOffset = playerWidth -32;
 	//Shield
 	players[0].playerShield.shieldOwner = PLAYER_1;
-	players[0].playerShield.posX = fix16ToInt(players[0].posX) + shieldOffset;
+	players[0].playerShield.posX = fix16ToInt(players[0].posX) + players[0].shieldOffset + 10;
 	players[0].playerShield.posY = players[0].posY;
 	players[0].playerShield.shieldSprite = SPR_addSprite(&shieldSprite, players[0].playerShield.posX, players[0].playerShield.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 	SPR_setVisibility(players[0].playerShield.shieldSprite, HIDDEN);
@@ -207,37 +204,26 @@ void setupPlayers()
 	players[1].posY = intToFix16(groundHeight - playerHeight);
 	players[1].moveConstraintXLeft = screenWidth / 2;
 	players[1].moveConstraintXRight = 256;
+	players[1].shieldOffset = -playerWidth / 2 + 32;
 	//Shield
 	players[1].playerShield.shieldOwner = PLAYER_2;
-	players[1].playerShield.posX = fix16ToInt(players[1].posX) - 0;
+	players[1].playerShield.posX = fix16ToInt(players[1].posX) + players[1].shieldOffset;
 	players[1].playerShield.posY = players[1].posY;
 	players[1].playerShield.shieldSprite = SPR_addSprite(&shieldSprite, players[1].playerShield.posX, players[1].playerShield.posY, TILE_ATTR(PAL1, 0, FALSE, TRUE));
 	SPR_setVisibility(players[1].playerShield.shieldSprite, HIDDEN);
 
 	//Insert the player sprites at the above positions
 	players[0].playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(players[0].posX), fix16ToInt(players[0].posY), TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	SPR_setAnim(players[0].playerSprite, 1);
+	SPR_setAnim(players[0].playerSprite, 0);
 	players[1].playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(players[1].posX), fix16ToInt(players[1].posY), TILE_ATTR(PAL1, 0, FALSE, TRUE));
 	SPR_update();
 
 	//set up projectiles
-	projectiles[0].projectileOwner = PLAYER_1;
-	projectiles[0].direction = 1;
-	projectiles[0].inPlay = FALSE;
-	projectiles[0].projectileSpeed = 0;
-	projectiles[0].projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(players[0].posX) + projectileSpawnXOffset, projectiles[0].posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	SPR_setVisibility(projectiles[0].projectileSprite, HIDDEN);
-
-	projectiles[1].projectileOwner = PLAYER_2;
-	projectiles[1].direction = 1;
-	projectiles[1].inPlay = FALSE;
-	projectiles[1].projectileSpeed = 0;
-	projectiles[1].projectileSprite = SPR_addSprite(&projectileSprite, fix16ToInt(players[1].posX) + projectileSpawnXOffset, projectiles[1].posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	SPR_setVisibility(projectiles[1].projectileSprite, HIDDEN);
-
-	//set up shields
-	shields[0] = players[0].playerShield;
-	shields[1] = players[1].playerShield;
+	for (int projNumber = 0; projNumber < 2; projNumber++)
+	{
+		projectiles[projNumber].projectileSprite = SPR_addSprite(&projectileSprite, 0, 0, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+		SPR_setVisibility(projectiles[projNumber].projectileSprite, HIDDEN);
+	}
 
 	//debug
 	debug1 = SPR_addSprite(&debug, players[1].playerShield.posX + shieldWidth, players[1].playerShield.posY + shieldHeight, TILE_ATTR(PAL1, 0, FALSE, FALSE));
@@ -318,19 +304,20 @@ void playerWalking()
 
 void setPlayerPosition()
 {
-	//Debug
-	SPR_setPosition(debug1, players[1].playerShield.posX -4, players[1].playerShield.posY - 4);
-	SPR_setPosition(debug2, players[1].playerShield.posX + 12, players[1].playerShield.posY - 4);
-	SPR_setPosition(debug3, players[1].playerShield.posX + 12, players[1].playerShield.posY + shieldHeight - 4);
-	SPR_setPosition(debug4, players[1].playerShield.posX -4, players[1].playerShield.posY + shieldHeight - 4);
-
 	//Players
 	for (int playerNum = 0; playerNum < 2; playerNum++)
 	{
+		//Debug
+		SPR_setPosition(debug1, players[playerNum].playerShield.posX - 4, players[playerNum].playerShield.posY - 4);
+		SPR_setPosition(debug2, players[playerNum].playerShield.posX + 12, players[playerNum].playerShield.posY - 4);
+		SPR_setPosition(debug3, players[playerNum].playerShield.posX + 12, players[playerNum].playerShield.posY + shieldHeight - 4);
+		SPR_setPosition(debug4, players[playerNum].playerShield.posX - 4, players[playerNum].playerShield.posY + shieldHeight - 4);
+
+		players[playerNum].playerShield.posX = fix16ToInt(players[playerNum].posX) + players[playerNum].shieldOffset;
+		players[playerNum].playerShield.posY = fix16ToInt(players[playerNum].posY);
+		
 		SPR_setPosition(players[playerNum].playerSprite, fix16ToInt(players[playerNum].posX), fix16ToInt(players[playerNum].posY));
-		SPR_setPosition(players[playerNum].playerShield.shieldSprite, fix16ToInt(players[playerNum].posX) + shieldOffset, fix16ToInt(players[playerNum].posY));
-		players[playerNum].playerShield.posX = fix16ToInt(players[playerNum].posX) + shieldOffset;
-		players[playerNum].playerShield.posY = players[playerNum].posY;
+		SPR_setPosition(players[playerNum].playerShield.shieldSprite, players[playerNum].playerShield.posX, fix16ToInt(players[playerNum].posY));
 	}
 }
 
@@ -448,7 +435,6 @@ void checkProjShieldCollision()
 		{
 			/* code */
 		}
-		
 	}
 }
 
@@ -658,11 +644,11 @@ char str_y2[16] = "0";
 void updateDebug()
 {
 
-	int debugInfo1 = projectiles[0].inPlay;
-	int debugInfo2 = projectiles[1].inPlay;
+	int debugInfo1 = players[1].playerShield.posX;
+	int debugInfo2 = fix16ToInt(players[1].posX);
 	sprintf(strPosY, "%d", inPlayRaquetBalls);
-	sprintf(str_y1, "%d", debugInfo2);
-	sprintf(str_y2, "%d", debugInfo1);
+	sprintf(str_y1, "%d", debugInfo1);
+	sprintf(str_y2, "%d", debugInfo2);
 
 	VDP_clearTextBG(PLAN_A, 16, 6, 4);
 	VDP_clearTextBG(PLAN_A, 16, 8, 4);
