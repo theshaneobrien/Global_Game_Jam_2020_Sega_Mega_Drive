@@ -97,6 +97,7 @@ struct Hitbox
 struct Player
 {
 	Sprite *playerSprite;
+	Sprite *scoreSprite;
 	fix16 posX;
 	fix16 velX;
 	fix16 posY;
@@ -129,7 +130,6 @@ int p2TimeSInceLastShield = 0;
 int movementShieldCooldown = 12;
 
 const int groundHeight = 208;
-
 
 int scrollSpeed = 1;
 int scrollAmount;
@@ -164,7 +164,7 @@ void playerCollision(int projNum, int playerHitNum);
 //Random Utils
 int countFrames();
 void scrollBackground();
-void setupMusic();
+void gameplayMusic();
 
 //Button Functions
 int buttonPressEvent(int playerNum, int button);
@@ -223,11 +223,13 @@ void init()
 
 	SPR_init(0, 0, 0);
 	titleScreen();
-	setupMusic();
 }
 
 void titleScreen()
 {
+	
+	XGM_setLoopNumber(-1);
+	XGM_startPlay(&playerselect);
 	//Set the background color
 	//Manually sets a pallete colour to a hex code
 	//First pallet is the background color
@@ -241,6 +243,8 @@ void titleScreen()
 
 void loadGameplay()
 {
+	XGM_stopPlay();
+	gameplayMusic();
 	atTitleScreen = FALSE;
 	VDP_clearPlan(PLAN_A, TRUE);
 	VDP_clearPlan(PLAN_B, TRUE);
@@ -248,6 +252,10 @@ void loadGameplay()
 	setupPlayers();
 	VDP_setPalette(PAL2, countDown.palette->data);
 	countDownSprite = SPR_addSprite(&countDown, (screenWidth / 2) - 32, 64, TILE_ATTR(PAL2,0,FALSE,FALSE));
+	players[0].scoreSprite = SPR_addSprite(&numbers, 10, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	SPR_setAnim(players[0].scoreSprite, 0);
+	players[1].scoreSprite  = SPR_addSprite(&numbers, 286, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	SPR_setAnim(players[1].scoreSprite, 0);
 	SPR_setAnim(countDownSprite, 0);
 	preGameCountdown = TRUE;
 }
@@ -268,9 +276,9 @@ void gameCountdown()
 	}
 }
 
-void setupMusic()
+void gameplayMusic()
 {
-	XGM_setLoopNumber(-1);
+	XGM_stopPlay();
 	XGM_startPlay(&music);
 }
 
@@ -799,13 +807,27 @@ void playerCollision(int projNum, int playerHitNum)
 	hitFreeze = TRUE;
 	if(playerHitNum == 0)
 	{
-		players[1].score++;
+		scoreIncrement(1);
 	}else
 	{
-		players[0].score++;
+		scoreIncrement(0);
 	}
 	
 	killProjectile(projNum);
+}
+
+void scoreIncrement(int playerNum)
+{
+	players[playerNum].score++;
+	//change score score sprite anim
+	SPR_setAnim(players[playerNum].scoreSprite, players[playerNum].score);
+
+	if(players[playerNum].score == 10)
+	{
+		XGM_stopPlay();
+		XGM_startPlay(&winner);
+	}
+
 }
 
 //Background Effects
