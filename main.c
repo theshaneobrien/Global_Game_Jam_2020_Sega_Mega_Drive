@@ -648,10 +648,10 @@ void shieldTimer()
 void startShield(int playerNum)
 {	
 	// Don't allow player to shield while moving, but allow if jumping and moving in mid-air
-	if ((players[playerNum].isMovingRight == TRUE || players[playerNum].isMovingLeft == TRUE) && players[playerNum].jumping==FALSE)
+	/*if ((players[playerNum].isMovingRight == TRUE || players[playerNum].isMovingLeft == TRUE) && players[playerNum].jumping==FALSE)
 	{
 		return 0;
-	}
+	}*/
 
 	// Don't be tooooo hasty ;)
 	if(playerNum == 0 && p1TimeSInceLastShield < movementShieldCooldown)
@@ -765,6 +765,8 @@ void shieldCollision(int projNum, int shieldHitNum)
 	players[projectiles[projNum].originalOwner].hasActiveProjectile = FALSE;
 	projectiles[projNum].direction = projectiles[projNum].direction * -1;
 	projectiles[projNum].hitCount++;
+	SPR_setPalette(projectiles[projNum].projectileSprite, PAL2);
+	
 	if (projectiles[projNum].hitCount > 3)
 	{
 		killProjectile(projNum);
