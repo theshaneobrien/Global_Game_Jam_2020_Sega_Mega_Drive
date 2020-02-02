@@ -52,6 +52,15 @@ int shieldHeight = 64;
 int shieldWidth = 32;
 struct Shield shields[2];
 
+struct Hitbox
+{
+	int posX;
+	int posY;
+	int width;
+	int height;
+	int offset;
+};
+
 //Player
 struct Player
 {
@@ -60,14 +69,16 @@ struct Player
 	fix16 velX;
 	fix16 posY;
 	fix16 velY;
-	int horizontalNormal;
-	int verticalNormal;
 	bool jumping;
 	bool isMoving;
+	int horizontalNormal;
+	int verticalNormal;
 	int moveConstraintXLeft;
 	int moveConstraintXRight;
-	struct Shield playerShield;
 	int shieldOffset;
+	int score;
+	struct Shield playerShield;
+	struct Hitbox hitbox;
 };
 struct Player players[2];
 
@@ -76,7 +87,7 @@ const int playerHeight = 64;
 const int jumpForce = -3;
 const fix16 jumpDistance = FIX16(0.75);
 
-const int groundHeight = 200;
+const int groundHeight = 208;
 
 int scrollSpeed = 1;
 int scrollAmount;
@@ -100,6 +111,7 @@ void killProjectile(int projNum);
 void checkProjShieldCollision();
 void shieldCollision(int projNum, int shieldHitNum);
 void checkProjPlayerCollision();
+void playerCollision(int projNum, int playerHitNum);
 int countFrames();
 void scrollBackground();
 void setupMusic();
@@ -201,7 +213,14 @@ void setupPlayers()
 	players[0].playerShield.posY = players[0].posY;
 	players[0].playerShield.shieldSprite = SPR_addSprite(&shieldSprite, players[0].playerShield.posX, players[0].playerShield.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 	SPR_setVisibility(players[0].playerShield.shieldSprite, HIDDEN);
-	
+	//Hitbox
+	players[0].hitbox.posX = fix16ToInt(players[0].posX);
+	players[0].hitbox.posY = fix16ToInt(players[0].posY);
+	players[0].hitbox.width = 32;
+	players[0].hitbox.height = 64;
+	players[0].hitbox.offset = -8;
+	//Score
+	players[0].score = 0;
 
 	//Set the players intial position and constraints
 	players[1].posX = intToFix16(256);
@@ -215,6 +234,14 @@ void setupPlayers()
 	players[1].playerShield.posY = players[1].posY;
 	players[1].playerShield.shieldSprite = SPR_addSprite(&shieldSprite, players[1].playerShield.posX, players[1].playerShield.posY, TILE_ATTR(PAL1, 0, FALSE, TRUE));
 	SPR_setVisibility(players[1].playerShield.shieldSprite, HIDDEN);
+	//Hitbox
+	players[1].hitbox.posX = fix16ToInt(players[1].posX)+playerWidth;
+	players[1].hitbox.posY = fix16ToInt(players[1].posY);
+	players[1].hitbox.width = 32;
+	players[1].hitbox.height = 64;
+	players[1].hitbox.offset = (-playerWidth / 2) + 64;
+	//Score
+	players[1].score = 0;
 
 	//Insert the player sprites at the above positions
 	players[0].playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(players[0].posX), fix16ToInt(players[0].posY), TILE_ATTR(PAL1, 0, FALSE, FALSE));
@@ -233,10 +260,10 @@ void setupPlayers()
 	shields[1] = players[1].playerShield;
 
 	//debug
-	debug1 = SPR_addSprite(&debug, players[1].playerShield.posX + shieldWidth, players[1].playerShield.posY + shieldHeight, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	debug2 = SPR_addSprite(&debug, players[1].playerShield.posX, players[1].playerShield.posY + shieldHeight, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	debug3 = SPR_addSprite(&debug, players[1].playerShield.posX + shieldWidth, players[1].playerShield.posY + shieldHeight, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	debug4 = SPR_addSprite(&debug, players[1].playerShield.posX, players[1].playerShield.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	debug1 = SPR_addSprite(&debug, players[1].hitbox.posY + players[1].hitbox.width, players[1].hitbox.posY + players[1].hitbox.height, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	debug2 = SPR_addSprite(&debug, players[1].hitbox.posY, players[1].hitbox.posY + players[1].hitbox.height, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	debug3 = SPR_addSprite(&debug, players[1].hitbox.posY + players[1].hitbox.width, players[1].hitbox.posY + players[1].hitbox.height, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	debug4 = SPR_addSprite(&debug, players[1].hitbox.posY, players[1].hitbox.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 }
 
 int countFrames()
@@ -315,14 +342,28 @@ void setPlayerPosition()
 	for (int playerNum = 0; playerNum < 2; playerNum++)
 	{
 		//Debug
-		SPR_setPosition(debug1, players[0].playerShield.posX - 4, players[0].playerShield.posY - 4);
-		SPR_setPosition(debug2, players[0].playerShield.posX + 12, players[0].playerShield.posY - 4);
-		SPR_setPosition(debug3, players[0].playerShield.posX + 12, players[0].playerShield.posY + shieldHeight - 4);
-		SPR_setPosition(debug4, players[0].playerShield.posX - 4, players[0].playerShield.posY + shieldHeight - 4);
+		if(frameCount % 2 == 0)
+		{
+			SPR_setPosition(debug1, players[0].hitbox.posX + players[0].hitbox.width, players[0].hitbox.posY);
+			SPR_setPosition(debug2, players[0].hitbox.posX, players[0].hitbox.posY + players[0].hitbox.height);
+			SPR_setPosition(debug3, players[0].hitbox.posX + players[0].hitbox.width, players[0].hitbox.posY + players[1].hitbox.height);
+			SPR_setPosition(debug4, players[0].hitbox.posX, players[0].hitbox.posY);
+		}
+		else
+		{
+			SPR_setPosition(debug1, players[1].hitbox.posX + players[1].hitbox.width, players[1].hitbox.posY);
+			SPR_setPosition(debug2, players[1].hitbox.posX, players[1].hitbox.posY + players[1].hitbox.height);
+			SPR_setPosition(debug3, players[1].hitbox.posX + players[1].hitbox.width, players[1].hitbox.posY + players[1].hitbox.height);
+			SPR_setPosition(debug4, players[1].hitbox.posX, players[1].hitbox.posY);
+		}
+		
 
 		players[playerNum].playerShield.posX = fix16ToInt(players[playerNum].posX) + players[playerNum].shieldOffset;
 		players[playerNum].playerShield.posY = fix16ToInt(players[playerNum].posY);
-		
+
+		players[playerNum].hitbox.posX = fix16ToInt(players[playerNum].posX) + players[playerNum].hitbox.offset;
+		players[playerNum].hitbox.posY = fix16ToInt(players[playerNum].posY);
+
 		SPR_setPosition(players[playerNum].playerSprite, fix16ToInt(players[playerNum].posX), fix16ToInt(players[playerNum].posY));
 		SPR_setPosition(players[playerNum].playerShield.shieldSprite, players[playerNum].playerShield.posX, fix16ToInt(players[playerNum].posY));
 	}
@@ -460,7 +501,39 @@ void shieldCollision(int projNum, int shieldHitNum)
 
 void checkProjPlayerCollision()
 {
+	for (int projNum = 0; projNum < 2; projNum++)
+	{
+		for (int playerHitNum = 0; playerHitNum < 2; playerHitNum++)
+		{
+			if (projectiles[projNum].inPlay == TRUE)
+			{
+				if (projectiles[projNum].posX < intToFix16(players[playerHitNum].hitbox.posX + players[playerHitNum].hitbox.width) && projectiles[projNum].posX + intToFix16(projectileHitSize) > intToFix16(players[playerHitNum].hitbox.posX))
+				{
+					if (projectiles[projNum].posY < intToFix16(players[playerHitNum].hitbox.posY + players[playerHitNum].hitbox.height) && projectiles[projNum].posY + intToFix16(projectileHitSize) >= intToFix16(players[playerHitNum].hitbox.posY))
+					{
+						if (projectiles[projNum].projectileOwner != playerHitNum)
+						{
+							playerCollision(projNum, playerHitNum);
+						}
+					}
+				}
+			}
+		}
+	}
+}
 
+void playerCollision(int projNum, int playerHitNum)
+{
+	if(playerHitNum == 0)
+	{
+		players[1].score++;
+	}else
+	{
+		players[0].score++;
+	}
+	
+	
+	killProjectile(projNum);
 }
 
 //Background Effects
@@ -669,8 +742,8 @@ char str_y2[16] = "0";
 void updateDebug()
 {
 
-	int debugInfo1 = projectiles[0].hitCount;
-	int debugInfo2 = projectiles[1].hitCount;
+	int debugInfo1 = players[0].score;
+	int debugInfo2 = players[1].score;
 	sprintf(strPosY, "%d", inPlayRaquetBalls);
 	sprintf(str_y1, "%d", debugInfo1);
 	sprintf(str_y2, "%d", debugInfo2);
