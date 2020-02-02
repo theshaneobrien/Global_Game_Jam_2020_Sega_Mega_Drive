@@ -27,6 +27,7 @@ struct Projectile
 	int projectileSpeed;
 	int projectileOwner;
 	int direction;
+	int hitCount;
 };
 int projectileHitSize = 8;
 int projectileSpawnXOffset = 32;
@@ -49,6 +50,7 @@ int p2ShieldFrameCount = 0;
 int shieldFrameTime = 5;
 int shieldHeight = 64;
 int shieldWidth = 32;
+struct Shield shields[2];
 
 //Player
 struct Player
@@ -96,7 +98,8 @@ void projectileMovement();
 void killProjectile(int projNum);
 //Collision
 void checkProjShieldCollision();
-
+void shieldCollision(int projNum);
+void checkProjPlayerCollision();
 int countFrames();
 void scrollBackground();
 void setupMusic();
@@ -127,6 +130,7 @@ int main()
 		shieldTimer();
 		projectileMovement();
 		checkProjShieldCollision();
+		checkProjPlayerCollision();
 		//Wait for the frame to finish rendering
 		VDP_waitVSync();
 		updateDebug();
@@ -190,7 +194,7 @@ void setupPlayers()
 	players[0].posY = intToFix16(groundHeight - playerHeight);
 	players[0].moveConstraintXLeft = 0;players[0].shieldOffset;
 	players[0].moveConstraintXRight = (screenWidth / 2) - playerWidth;
-	players[0].shieldOffset = playerWidth -32;
+	players[0].shieldOffset = playerWidth-16;
 	//Shield
 	players[0].playerShield.shieldOwner = PLAYER_1;
 	players[0].playerShield.posX = fix16ToInt(players[0].posX) + players[0].shieldOffset + 10;
@@ -204,7 +208,7 @@ void setupPlayers()
 	players[1].posY = intToFix16(groundHeight - playerHeight);
 	players[1].moveConstraintXLeft = screenWidth / 2;
 	players[1].moveConstraintXRight = 256;
-	players[1].shieldOffset = -playerWidth / 2 + 32;
+	players[1].shieldOffset = (-playerWidth / 2) + 32;
 	//Shield
 	players[1].playerShield.shieldOwner = PLAYER_2;
 	players[1].playerShield.posX = fix16ToInt(players[1].posX) + players[1].shieldOffset;
@@ -224,6 +228,9 @@ void setupPlayers()
 		projectiles[projNumber].projectileSprite = SPR_addSprite(&projectileSprite, 0, 0, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 		SPR_setVisibility(projectiles[projNumber].projectileSprite, HIDDEN);
 	}
+
+	shields[0] = players[0].playerShield;
+	shields[1] = players[1].playerShield;
 
 	//debug
 	debug1 = SPR_addSprite(&debug, players[1].playerShield.posX + shieldWidth, players[1].playerShield.posY + shieldHeight, TILE_ATTR(PAL1, 0, FALSE, FALSE));
@@ -308,10 +315,10 @@ void setPlayerPosition()
 	for (int playerNum = 0; playerNum < 2; playerNum++)
 	{
 		//Debug
-		SPR_setPosition(debug1, players[playerNum].playerShield.posX - 4, players[playerNum].playerShield.posY - 4);
-		SPR_setPosition(debug2, players[playerNum].playerShield.posX + 12, players[playerNum].playerShield.posY - 4);
-		SPR_setPosition(debug3, players[playerNum].playerShield.posX + 12, players[playerNum].playerShield.posY + shieldHeight - 4);
-		SPR_setPosition(debug4, players[playerNum].playerShield.posX - 4, players[playerNum].playerShield.posY + shieldHeight - 4);
+		SPR_setPosition(debug1, players[0].playerShield.posX - 4, players[0].playerShield.posY - 4);
+		SPR_setPosition(debug2, players[0].playerShield.posX + 12, players[0].playerShield.posY - 4);
+		SPR_setPosition(debug3, players[0].playerShield.posX + 12, players[0].playerShield.posY + shieldHeight - 4);
+		SPR_setPosition(debug4, players[0].playerShield.posX - 4, players[0].playerShield.posY + shieldHeight - 4);
 
 		players[playerNum].playerShield.posX = fix16ToInt(players[playerNum].posX) + players[playerNum].shieldOffset;
 		players[playerNum].playerShield.posY = fix16ToInt(players[playerNum].posY);
@@ -420,22 +427,38 @@ void checkProjShieldCollision()
 {
 	for (int projNum = 0; projNum < 2; projNum++)
 	{
-		if (projectiles[projNum].inPlay && players[1].playerShield.shieldActive)
+		for (int shieldNum = 0; shieldNum < 2; shieldNum++)
 		{
-			if (projectiles[projNum].posX < intToFix16(players[1].playerShield.posX + shieldWidth) && projectiles[projNum].posX + intToFix16(projectileHitSize) > intToFix16(players[1].playerShield.posX))
+			if (projectiles[projNum].inPlay == TRUE && players[shieldNum].playerShield.shieldActive == TRUE)
 			{
-				if (projectiles[projNum].posY < intToFix16(players[1].playerShield.posY + shieldHeight) && projectiles[projNum].posY + intToFix16(projectileHitSize) >= intToFix16(players[1].playerShield.posY))
+				if (projectiles[projNum].posX < intToFix16(players[shieldNum].playerShield.posX + shieldWidth - 6) && projectiles[projNum].posX + intToFix16(projectileHitSize) > intToFix16(players[shieldNum].playerShield.posX - 6))
 				{
-					//players[0].playerProjectile.direction = -1;
-					SPR_setVisibility(projectiles[projNum].projectileSprite, HIDDEN);
+					if (projectiles[projNum].posY < intToFix16(players[shieldNum].playerShield.posY + shieldHeight) && projectiles[projNum].posY + intToFix16(projectileHitSize) >= intToFix16(players[shieldNum].playerShield.posY))
+					{
+						if (projectiles[projNum].projectileOwner != players[shieldNum].playerShield.shieldOwner)
+						{
+							shieldCollision(projNum);
+						}
+					}
 				}
 			}
 		}
-		for (int shieldNum = 0; shieldNum < 2; shieldNum++)
-		{
-			/* code */
-		}
 	}
+}
+
+void shieldCollision(int projNum)
+{
+	projectiles[projNum].direction = projectiles[projNum].direction * -1;
+	projectiles[projNum].hitCount++;
+	if (projectiles[projNum].hitCount > 3)
+	{
+		killProjectile(projNum);
+	}
+}
+
+void checkPlayerCollision()
+{
+
 }
 
 //Background Effects
@@ -645,7 +668,7 @@ void updateDebug()
 {
 
 	int debugInfo1 = players[1].playerShield.posX;
-	int debugInfo2 = fix16ToInt(players[1].posX);
+	int debugInfo2 = players[1].playerShield.posX;
 	sprintf(strPosY, "%d", inPlayRaquetBalls);
 	sprintf(str_y1, "%d", debugInfo1);
 	sprintf(str_y2, "%d", debugInfo2);
