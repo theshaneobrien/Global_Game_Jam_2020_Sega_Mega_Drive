@@ -497,7 +497,7 @@ void shieldTimer()
 	{
 		if (players[playerNum].playerShield.shieldActive)
 		{
-			SPR_setAnim(players[playerNum].playerSprite, ANIM_DEFLECT);
+			SPR_setAnimAndFrame(players[playerNum].playerSprite, ANIM_DEFLECT, 1);
 			SPR_setVisibility(players[playerNum].playerShield.shieldSprite, VISIBLE);
 			SPR_setAnim(players[playerNum].playerShield.shieldSprite, 0);
 			SPR_update();
@@ -506,7 +506,7 @@ void shieldTimer()
 			if (p1ShieldFrameCount > shieldFrameTime)
 			{
 				SPR_setVisibility(players[playerNum].playerShield.shieldSprite, HIDDEN);
-				//SPR_setAnim(players[0].shieldSprite, 0);
+				SPR_setAnim(players[playerNum].playerSprite, ANIM_IDLE);
 				players[playerNum].playerShield.shieldActive = FALSE;
 				p1ShieldFrameCount = 0;
 			}
