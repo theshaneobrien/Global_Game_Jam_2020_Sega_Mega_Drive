@@ -456,7 +456,7 @@ void shieldCollision(int projNum)
 	}
 }
 
-void checkPlayerCollision()
+void checkProjPlayerCollision()
 {
 
 }
