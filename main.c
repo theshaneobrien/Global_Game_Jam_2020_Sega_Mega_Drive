@@ -435,6 +435,7 @@ void p2ShieldTimer()
 	}
 }
 
+//Projectiles
 int fireProjectile(int playerNum)
 {
 	for (int projNum = 0; projNum < 2; projNum++)
@@ -461,7 +462,6 @@ int fireProjectile(int playerNum)
 	return 0;
 }
 
-//Projectile
 void projectileMovement()
 {
 	for (int projNum = 0; projNum < 2; projNum++)
