@@ -123,6 +123,8 @@ void checkProjShieldCollision();
 void shieldCollision(int projNum, int shieldHitNum);
 void checkProjPlayerCollision();
 void playerCollision(int projNum, int playerHitNum);
+
+//Random Utils
 int countFrames();
 void scrollBackground();
 void setupMusic();
@@ -296,7 +298,6 @@ void gravity()
 {
 		for (int playerNum = 0; playerNum < 2; playerNum++)
 		{
-			
 			//Apply Velocity, need to use fix16Add to add two "floats" together
 			players[playerNum].posY = fix16Add(players[playerNum].posY, players[playerNum].velY);
 			players[playerNum].posX = fix16Add(players[playerNum].posX, players[playerNum].velX);
@@ -355,7 +356,6 @@ void playerWalking()
 
 void p1WalkingCounter()
 {
-	
 	if (players[0].isMovingRight == TRUE)
 	{
 		SPR_setAnim(players[0].playerSprite, ANIM_WALKING);
@@ -495,6 +495,7 @@ void shieldTimer()
 	{
 		if (players[playerNum].playerShield.shieldActive)
 		{
+			SPR_setAnim(players[playerNum].playerSprite, ANIM_DEFLECT);
 			SPR_setVisibility(players[playerNum].playerShield.shieldSprite, VISIBLE);
 			SPR_setAnim(players[playerNum].playerShield.shieldSprite, 0);
 			SPR_update();
@@ -513,9 +514,7 @@ void shieldTimer()
 
 void startShield(int playerNum)
 {
-	SPR_setAnim(players[playerNum].playerSprite, ANIM_DEFLECT);
 	players[playerNum].playerShield.shieldActive = TRUE;
-	//if(frameCount)
 }
 
 //Projectiles
