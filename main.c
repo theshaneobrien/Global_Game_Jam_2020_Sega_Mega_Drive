@@ -88,11 +88,9 @@ void gravity();
 void playerJumping();
 void playerWalking();
 void setPlayerPosition();
-void player1PosClamp();
-void player2PosClamp();
+void playerPosClamp();
 //ShieldTimers
-void p1ShieldTimer();
-void p2ShieldTimer();
+void shieldTimer();
 //ProjectileUpdates
 int fireProjectile(int playerNum);
 void projectileMovement();
@@ -101,7 +99,7 @@ void killProjectile(int projNum);
 void checkProjShieldCollision();
 
 int countFrames();
-void ScrollBackground();
+void scrollBackground();
 void setupMusic();
 
 //Button Functions
@@ -122,13 +120,12 @@ int main()
 	while (1)
 	{
 		countFrames();
-		ScrollBackground();
+		scrollBackground();
 		//Updates Sprites Position / Animation Frame
 		SPR_update();
 		gravity();
 		setPlayerPosition();
-		p1ShieldTimer();
-		p2ShieldTimer();
+		shieldTimer();
 		projectileMovement();
 		checkProjShieldCollision();
 		//Wait for the frame to finish rendering
@@ -261,89 +258,60 @@ int countFrames()
 
 void gravity()
 {
-	//Apply Velocity, need to use fix16Add to add two "floats" together
-	players[0].posY = fix16Add(players[0].posY, players[0].velY);
-	players[0].posX = fix16Add(players[0].posX, players[0].velX);
-
-	players[1].posY = fix16Add(players[1].posY, players[1].velY);
-	players[1].posX = fix16Add(players[1].posX, players[1].velX);
-
-	//Check if player is on floor
-	if (fix16ToInt(players[0].posY) + playerHeight >= groundHeight)
+	for (int playerNum = 0; playerNum < 2; playerNum++)
 	{
-		players[0].jumping = FALSE;
-		players[0].velY = intToFix16(0);
-		players[0].posY = intToFix16(groundHeight - playerHeight);
-		players[0].velX = intToFix16(0);
-	}
-	else
-	{
-		players[0].velY = fix16Add(players[0].velY, 6);
-		player1PosClamp();
-	}
-
-	if (fix16ToInt(players[1].posY) + playerHeight >= groundHeight)
-	{
-		players[1].jumping = FALSE;
-		players[1].velY = intToFix16(0);
-		players[1].posY = intToFix16(groundHeight - playerHeight);
-		players[1].velX = intToFix16(0);
-	}
-	else
-	{
-		players[1].velY = fix16Add(players[1].velY, 6);
-		player2PosClamp();
+		//Apply Velocity, need to use fix16Add to add two "floats" together
+		players[playerNum].posY = fix16Add(players[playerNum].posY, players[playerNum].velY);
+		players[playerNum].posX = fix16Add(players[playerNum].posX, players[playerNum].velX);
+		if (fix16ToInt(players[playerNum].posY) + playerHeight >= groundHeight)
+		{
+			players[playerNum].jumping = FALSE;
+			players[playerNum].velY = intToFix16(0);
+			players[playerNum].posY = intToFix16(groundHeight - playerHeight);
+			players[playerNum].velX = intToFix16(0);
+		}
+		else
+		{
+			players[playerNum].velY = fix16Add(players[playerNum].velY, 6);
+			playerPosClamp();
+		}
 	}
 }
 
 void playerJumping(int player, int direction)
 {
 	int jumpDirection = direction;
-	if (player == PLAYER_1 && players[0].jumping != TRUE)
+	for (int playerNum = 0; playerNum < 2; playerNum++)
 	{
-		players[0].jumping = TRUE;
-		players[0].velY = intToFix16(jumpForce);
-		players[0].velX = fix16Mul(intToFix16(direction), jumpDistance);
-	}
-
-	if (player == PLAYER_2 && players[1].jumping != TRUE)
-	{
-		players[1].jumping = TRUE;
-		players[1].velY = intToFix16(jumpForce);
-		players[1].velX = fix16Mul(intToFix16(direction), jumpDistance);
+		if(playerNum == player)
+		{
+			if (players[playerNum].jumping != TRUE)
+			{
+				players[playerNum].jumping = TRUE;
+				players[playerNum].velY = intToFix16(jumpForce);
+				players[playerNum].velX = fix16Mul(intToFix16(direction), jumpDistance);
+			}
+		}
 	}
 }
 
 void playerWalking()
 {
-
-	if (players[0].horizontalNormal == 1)
+	for (int playerNum = 0; playerNum < 2; playerNum++)
 	{
-		if (players[0].posX < intToFix16(players[0].moveConstraintXRight))
+		if (players[playerNum].horizontalNormal == 1)
 		{
-			players[0].posX += intToFix16(playerWidth / 2);
+			if (players[playerNum].posX < intToFix16(players[playerNum].moveConstraintXRight))
+			{
+				players[playerNum].posX += intToFix16(playerWidth / 2);
+			}
 		}
-	}
-	else if (players[0].horizontalNormal == -1)
-	{
-		if (players[0].posX > intToFix16(players[0].moveConstraintXLeft))
+		else if (players[playerNum].horizontalNormal == -1)
 		{
-			players[0].posX -= intToFix16(playerWidth / 2);
-		}
-	}
-
-	if (players[1].horizontalNormal == 1)
-	{
-		if (players[1].posX < intToFix16(players[1].moveConstraintXRight))
-		{
-			players[1].posX += intToFix16(playerWidth / 2);
-		}
-	}
-	else if (players[1].horizontalNormal == -1)
-	{
-		if (players[1].posX > intToFix16(players[1].moveConstraintXLeft))
-		{
-			players[1].posX -= intToFix16(playerWidth / 2);
+			if (players[playerNum].posX > intToFix16(players[playerNum].moveConstraintXLeft))
+			{
+				players[playerNum].posX -= intToFix16(playerWidth / 2);
+			}
 		}
 	}
 }
@@ -357,80 +325,52 @@ void setPlayerPosition()
 	SPR_setPosition(debug4, players[1].playerShield.posX -4, players[1].playerShield.posY + shieldHeight - 4);
 
 	//Players
-	SPR_setPosition(players[0].playerSprite, fix16ToInt(players[0].posX), fix16ToInt(players[0].posY));
-	SPR_setPosition(players[0].playerShield.shieldSprite, fix16ToInt(players[0].posX) + shieldOffset, fix16ToInt(players[0].posY));
-	players[0].playerShield.posX = fix16ToInt(players[0].posX) + shieldOffset;
-	players[0].playerShield.posY = players[0].posY;
-
-	SPR_setPosition(players[1].playerSprite, fix16ToInt(players[1].posX), fix16ToInt(players[1].posY));
-	SPR_setPosition(players[1].playerShield.shieldSprite, fix16ToInt(players[1].posX) - 0, fix16ToInt(players[1].posY));
-	players[1].playerShield.posX = fix16ToInt(players[1].posX) - 0;
-	players[1].playerShield.posY = fix16ToInt(players[1].posY);
-}
-
-void player1PosClamp()
-{
-	if (players[0].posX < intToFix16(players[0].moveConstraintXLeft))
+	for (int playerNum = 0; playerNum < 2; playerNum++)
 	{
-		players[0].posX = intToFix16(0);
-		players[0].velX = intToFix16(0);
-	}
-
-	if (players[0].posX > intToFix16(players[0].moveConstraintXRight))
-	{
-		players[0].posX = intToFix16(players[0].moveConstraintXRight);
-		players[0].velX = intToFix16(0);
+		SPR_setPosition(players[playerNum].playerSprite, fix16ToInt(players[playerNum].posX), fix16ToInt(players[playerNum].posY));
+		SPR_setPosition(players[playerNum].playerShield.shieldSprite, fix16ToInt(players[playerNum].posX) + shieldOffset, fix16ToInt(players[playerNum].posY));
+		players[playerNum].playerShield.posX = fix16ToInt(players[playerNum].posX) + shieldOffset;
+		players[playerNum].playerShield.posY = players[playerNum].posY;
 	}
 }
 
-void player2PosClamp()
+void playerPosClamp()
 {
-	if (players[1].posX < intToFix16(players[1].moveConstraintXLeft))
+	for (int playerNum = 0; playerNum < 2; playerNum++)
 	{
-		players[1].posX = intToFix16(players[1].moveConstraintXLeft);
-		players[1].velX = intToFix16(0);
-	}
-
-	if (players[1].posX > intToFix16(players[1].moveConstraintXRight))
-	{
-		players[1].posX = intToFix16(players[1].moveConstraintXRight);
-		players[1].velX = intToFix16(0);
-	}
-}
-
-//ShieldTimers
-void p1ShieldTimer()
-{
-	if (players[0].playerShield.shieldActive)
-	{
-		SPR_setVisibility(players[0].playerShield.shieldSprite, VISIBLE);
-		SPR_setAnim(players[0].playerShield.shieldSprite, 0);
-		SPR_update();
-		//Start counting frames
-		p1ShieldFrameCount++;
-		if (p1ShieldFrameCount > shieldFrameTime)
+		if (players[playerNum].posX < intToFix16(players[playerNum].moveConstraintXLeft))
 		{
-			SPR_setVisibility(players[0].playerShield.shieldSprite, HIDDEN);
-			//SPR_setAnim(players[0].shieldSprite, 0);
-			players[0].playerShield.shieldActive = FALSE;
-			p1ShieldFrameCount = 0;
+			players[playerNum].posX = intToFix16(players[playerNum].moveConstraintXLeft);
+			players[playerNum].velX = intToFix16(0);
+		}
+
+		if (players[playerNum].posX > intToFix16(players[playerNum].moveConstraintXRight))
+		{
+			players[playerNum].posX = intToFix16(players[playerNum].moveConstraintXRight);
+			players[playerNum].velX = intToFix16(0);
 		}
 	}
 }
 
-void p2ShieldTimer()
+//ShieldTimers
+void shieldTimer()
 {
-	if (players[1].playerShield.shieldActive)
+	for (int playerNum = 0; playerNum < 2; playerNum++)
 	{
-		SPR_setVisibility(players[1].playerShield.shieldSprite, VISIBLE);
-
-		//Start counting frames
-		//p2ShieldFrameCount++;
-		if (p2ShieldFrameCount > shieldFrameTime)
+		if (players[playerNum].playerShield.shieldActive)
 		{
-			SPR_setVisibility(players[1].playerShield.shieldSprite, HIDDEN);
-			players[1].playerShield.shieldActive = FALSE;
-			p2ShieldFrameCount = 0;
+			SPR_setVisibility(players[playerNum].playerShield.shieldSprite, VISIBLE);
+			SPR_setAnim(players[playerNum].playerShield.shieldSprite, 0);
+			SPR_update();
+			//Start counting frames
+			p1ShieldFrameCount++;
+			if (p1ShieldFrameCount > shieldFrameTime)
+			{
+				SPR_setVisibility(players[playerNum].playerShield.shieldSprite, HIDDEN);
+				//SPR_setAnim(players[0].shieldSprite, 0);
+				players[playerNum].playerShield.shieldActive = FALSE;
+				p1ShieldFrameCount = 0;
+			}
 		}
 	}
 }
@@ -513,7 +453,7 @@ void checkProjShieldCollision()
 }
 
 //Background Effects
-void ScrollBackground()
+void scrollBackground()
 {
 	if (frameCount % 6 == 0)
 	{
