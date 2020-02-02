@@ -5,9 +5,9 @@ IMAGE BGClouds "tilemaps\BG_CloudsColor_DitherHigh.png" 0
 
 
 //Sprites
-SPRITE player1Sprite "sprites\Robot_Placeholder_SpriteStack-sheet1.png" 8 8 0 5
+SPRITE player1Sprite "sprites\Robot.png" 8 8 0 12
 SPRITE shieldSprite "sprites\OBJ_Shield.png" 2 8 0 15
-SPRITE projectileSprite "sprites\OBJ_ProjectileSpriteStack.png" 2 1 0 15
+SPRITE projectileSprite "sprites\Alternate_Projectile_Shape.png" 2 2 0 5
 
 SPRITE debug "sprites\debug.png" 1 1 0 15
 

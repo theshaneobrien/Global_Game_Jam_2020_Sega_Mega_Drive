@@ -6,6 +6,11 @@
 #define PLAYER_1 0
 #define PLAYER_2 1
 
+#define ANIM_IDLE 3
+#define ANIM_WALKING 2
+#define ANIM_JUMPING 1
+#define ANIM_DEFLECT 0
+
 #include <genesis.h>
 #include <resources.h>
 
@@ -70,7 +75,9 @@ struct Player
 	fix16 posY;
 	fix16 velY;
 	bool jumping;
-	bool isMoving;
+	bool grounded;
+	bool isMovingRight;
+	bool isMovingLeft;
 	int horizontalNormal;
 	int verticalNormal;
 	int moveConstraintXLeft;
@@ -81,11 +88,13 @@ struct Player
 	struct Hitbox hitbox;
 };
 struct Player players[2];
-
 const int playerWidth = 64;
 const int playerHeight = 64;
 const int jumpForce = -3;
 const fix16 jumpDistance = FIX16(0.75);
+const int walkingFrameTime = 32;
+int p1WalkingCount = 0;
+int p2WalkingCount = 0;
 
 const int groundHeight = 208;
 
@@ -99,6 +108,8 @@ void setupPlayers();
 void gravity();
 void playerJumping();
 void playerWalking();
+void p1WalkingCounter();
+void p2WalkingCounter();
 void setPlayerPosition();
 void playerPosClamp();
 //ShieldTimers
@@ -141,6 +152,8 @@ int main()
 		setPlayerPosition();
 		shieldTimer();
 		projectileMovement();
+		p1WalkingCounter();
+		p2WalkingCounter();
 		checkProjShieldCollision();
 		checkProjPlayerCollision();
 		//Wait for the frame to finish rendering
@@ -207,6 +220,7 @@ void setupPlayers()
 	players[0].moveConstraintXLeft = 0;players[0].shieldOffset;
 	players[0].moveConstraintXRight = (screenWidth / 2) - playerWidth;
 	players[0].shieldOffset = playerWidth-16;
+	players[0].grounded == TRUE;
 	//Shield
 	players[0].playerShield.shieldOwner = PLAYER_1;
 	players[0].playerShield.posX = fix16ToInt(players[0].posX) + players[0].shieldOffset + 10;
@@ -228,6 +242,7 @@ void setupPlayers()
 	players[1].moveConstraintXLeft = screenWidth / 2;
 	players[1].moveConstraintXRight = 256;
 	players[1].shieldOffset = (-playerWidth / 2) + 32;
+	players[1].grounded == TRUE;
 	//Shield
 	players[1].playerShield.shieldOwner = PLAYER_2;
 	players[1].playerShield.posX = fix16ToInt(players[1].posX) + players[1].shieldOffset;
@@ -245,8 +260,9 @@ void setupPlayers()
 
 	//Insert the player sprites at the above positions
 	players[0].playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(players[0].posX), fix16ToInt(players[0].posY), TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	SPR_setAnim(players[0].playerSprite, 0);
+	SPR_setAnim(players[0].playerSprite, ANIM_IDLE);
 	players[1].playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(players[1].posX), fix16ToInt(players[1].posY), TILE_ATTR(PAL1, 0, FALSE, TRUE));
+	SPR_setAnim(players[1].playerSprite, ANIM_IDLE);
 	SPR_update();
 
 	//set up projectiles
@@ -260,10 +276,10 @@ void setupPlayers()
 	shields[1] = players[1].playerShield;
 
 	//debug
-	debug1 = SPR_addSprite(&debug, players[1].hitbox.posY + players[1].hitbox.width, players[1].hitbox.posY + players[1].hitbox.height, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	debug2 = SPR_addSprite(&debug, players[1].hitbox.posY, players[1].hitbox.posY + players[1].hitbox.height, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	debug3 = SPR_addSprite(&debug, players[1].hitbox.posY + players[1].hitbox.width, players[1].hitbox.posY + players[1].hitbox.height, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	debug4 = SPR_addSprite(&debug, players[1].hitbox.posY, players[1].hitbox.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	// debug1 = SPR_addSprite(&debug, players[1].hitbox.posY + players[1].hitbox.width, players[1].hitbox.posY + players[1].hitbox.height, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	// debug2 = SPR_addSprite(&debug, players[1].hitbox.posY, players[1].hitbox.posY + players[1].hitbox.height, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	// debug3 = SPR_addSprite(&debug, players[1].hitbox.posY + players[1].hitbox.width, players[1].hitbox.posY + players[1].hitbox.height, TILE_ATTR(PAL1, 0, FALSE, FALSE));
+	// debug4 = SPR_addSprite(&debug, players[1].hitbox.posY, players[1].hitbox.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 }
 
 int countFrames()
@@ -278,24 +294,30 @@ int countFrames()
 
 void gravity()
 {
-	for (int playerNum = 0; playerNum < 2; playerNum++)
-	{
-		//Apply Velocity, need to use fix16Add to add two "floats" together
-		players[playerNum].posY = fix16Add(players[playerNum].posY, players[playerNum].velY);
-		players[playerNum].posX = fix16Add(players[playerNum].posX, players[playerNum].velX);
-		if (fix16ToInt(players[playerNum].posY) + playerHeight >= groundHeight)
+		for (int playerNum = 0; playerNum < 2; playerNum++)
 		{
-			players[playerNum].jumping = FALSE;
-			players[playerNum].velY = intToFix16(0);
-			players[playerNum].posY = intToFix16(groundHeight - playerHeight);
-			players[playerNum].velX = intToFix16(0);
+			
+			//Apply Velocity, need to use fix16Add to add two "floats" together
+			players[playerNum].posY = fix16Add(players[playerNum].posY, players[playerNum].velY);
+			players[playerNum].posX = fix16Add(players[playerNum].posX, players[playerNum].velX);
+			if (fix16ToInt(players[playerNum].posY) + playerHeight >= groundHeight)
+			{
+				players[playerNum].jumping = FALSE;
+				players[playerNum].velY = intToFix16(0);
+				players[playerNum].posY = intToFix16(groundHeight - playerHeight);
+				players[playerNum].velX = intToFix16(0);
+				if (players[playerNum].jumping == FALSE && players[playerNum].isMovingRight == FALSE && players[playerNum].isMovingLeft == FALSE && players[playerNum].grounded == FALSE)
+				{
+					SPR_setAnim(players[playerNum].playerSprite, ANIM_IDLE);
+					players[playerNum].grounded = TRUE;
+				}
+			}
+			else
+			{
+				players[playerNum].velY = fix16Add(players[playerNum].velY, 6);
+				playerPosClamp();
+			}
 		}
-		else
-		{
-			players[playerNum].velY = fix16Add(players[playerNum].velY, 6);
-			playerPosClamp();
-		}
-	}
 }
 
 void playerJumping(int player, int direction)
@@ -307,9 +329,10 @@ void playerJumping(int player, int direction)
 		{
 			if (players[playerNum].jumping != TRUE)
 			{
-				players[playerNum].jumping = TRUE;
 				players[playerNum].velY = intToFix16(jumpForce);
 				players[playerNum].velX = fix16Mul(intToFix16(direction), jumpDistance);
+				SPR_setAnim(players[playerNum].playerSprite, ANIM_JUMPING);
+				players[playerNum].jumping = TRUE;
 			}
 		}
 	}
@@ -321,16 +344,94 @@ void playerWalking()
 	{
 		if (players[playerNum].horizontalNormal == 1)
 		{
-			if (players[playerNum].posX < intToFix16(players[playerNum].moveConstraintXRight))
-			{
-				players[playerNum].posX += intToFix16(playerWidth / 2);
-			}
+			players[playerNum].isMovingRight = TRUE;
 		}
 		else if (players[playerNum].horizontalNormal == -1)
 		{
-			if (players[playerNum].posX > intToFix16(players[playerNum].moveConstraintXLeft))
+			players[playerNum].isMovingLeft = TRUE;
+		}
+	}
+}
+
+void p1WalkingCounter()
+{
+	
+	if (players[0].isMovingRight == TRUE)
+	{
+		SPR_setAnim(players[0].playerSprite, ANIM_WALKING);
+		p1WalkingCount++;
+		if (players[0].jumping == FALSE)
+		{
+			if (players[0].posX < intToFix16(players[0].moveConstraintXRight))
 			{
-				players[playerNum].posX -= intToFix16(playerWidth / 2);
+				players[0].posX += FIX16(1);
+			}
+			if (p1WalkingCount > walkingFrameTime)
+			{
+				p1WalkingCount = 0;
+				SPR_setAnim(players[0].playerSprite, ANIM_IDLE);
+				players[0].isMovingRight = FALSE;
+			}
+		}
+	}
+	else if (players[0].isMovingLeft == TRUE)
+	{
+		SPR_setAnim(players[0].playerSprite, ANIM_WALKING);
+		p1WalkingCount++;
+		if (players[0].jumping == FALSE)
+		{
+			if (players[0].posX > intToFix16(players[0].moveConstraintXLeft))
+			{
+				players[0].posX -= FIX16(1);
+			}
+			if (p1WalkingCount > walkingFrameTime)
+			{
+				p1WalkingCount = 0;
+				SPR_setAnim(players[0].playerSprite, ANIM_IDLE);
+				players[0].isMovingLeft = FALSE;
+			}
+		}
+	}
+}
+
+void p2WalkingCounter()
+{
+	if(players[1].jumping == FALSE)
+	{
+		if (players[1].isMovingRight == TRUE)
+		{
+			SPR_setAnim(players[1].playerSprite, ANIM_WALKING);
+			p2WalkingCount++;
+			if (players[1].jumping == FALSE)
+			{
+				if (players[1].posX < intToFix16(players[1].moveConstraintXRight))
+				{
+					players[1].posX += FIX16(1);
+				}
+				if (p2WalkingCount > walkingFrameTime)
+				{
+					p2WalkingCount = 0;
+					SPR_setAnim(players[1].playerSprite, ANIM_IDLE);
+					players[1].isMovingRight = FALSE;
+				}
+			}
+		}
+		else if (players[1].isMovingLeft == TRUE)
+		{
+			SPR_setAnim(players[1].playerSprite, ANIM_WALKING);
+			p2WalkingCount++;
+			if (players[0].jumping == FALSE)
+			{
+				if (players[1].posX > intToFix16(players[1].moveConstraintXLeft))
+				{
+					players[1].posX -= FIX16(1);
+				}
+				if (p2WalkingCount > walkingFrameTime)
+				{
+					p2WalkingCount = 0;
+					SPR_setAnim(players[1].playerSprite, ANIM_IDLE);
+					players[1].isMovingLeft = FALSE;
+				}
 			}
 		}
 	}
@@ -344,17 +445,17 @@ void setPlayerPosition()
 		//Debug
 		if(frameCount % 2 == 0)
 		{
-			SPR_setPosition(debug1, players[0].hitbox.posX + players[0].hitbox.width, players[0].hitbox.posY);
-			SPR_setPosition(debug2, players[0].hitbox.posX, players[0].hitbox.posY + players[0].hitbox.height);
-			SPR_setPosition(debug3, players[0].hitbox.posX + players[0].hitbox.width, players[0].hitbox.posY + players[1].hitbox.height);
-			SPR_setPosition(debug4, players[0].hitbox.posX, players[0].hitbox.posY);
+			// SPR_setPosition(debug1, players[0].hitbox.posX + players[0].hitbox.width, players[0].hitbox.posY);
+			// SPR_setPosition(debug2, players[0].hitbox.posX, players[0].hitbox.posY + players[0].hitbox.height);
+			// SPR_setPosition(debug3, players[0].hitbox.posX + players[0].hitbox.width, players[0].hitbox.posY + players[1].hitbox.height);
+			// SPR_setPosition(debug4, players[0].hitbox.posX, players[0].hitbox.posY);
 		}
 		else
 		{
-			SPR_setPosition(debug1, players[1].hitbox.posX + players[1].hitbox.width, players[1].hitbox.posY);
-			SPR_setPosition(debug2, players[1].hitbox.posX, players[1].hitbox.posY + players[1].hitbox.height);
-			SPR_setPosition(debug3, players[1].hitbox.posX + players[1].hitbox.width, players[1].hitbox.posY + players[1].hitbox.height);
-			SPR_setPosition(debug4, players[1].hitbox.posX, players[1].hitbox.posY);
+			// SPR_setPosition(debug1, players[1].hitbox.posX + players[1].hitbox.width, players[1].hitbox.posY);
+			// SPR_setPosition(debug2, players[1].hitbox.posX, players[1].hitbox.posY + players[1].hitbox.height);
+			// SPR_setPosition(debug3, players[1].hitbox.posX + players[1].hitbox.width, players[1].hitbox.posY + players[1].hitbox.height);
+			// SPR_setPosition(debug4, players[1].hitbox.posX, players[1].hitbox.posY);
 		}
 		
 
@@ -408,6 +509,13 @@ void shieldTimer()
 			}
 		}
 	}
+}
+
+void startShield(int playerNum)
+{
+	SPR_setAnim(players[playerNum].playerSprite, ANIM_DEFLECT);
+	players[playerNum].playerShield.shieldActive = TRUE;
+	//if(frameCount)
 }
 
 //Projectiles
@@ -532,7 +640,6 @@ void playerCollision(int projNum, int playerHitNum)
 		players[0].score++;
 	}
 	
-	
 	killProjectile(projNum);
 }
 
@@ -558,7 +665,7 @@ int buttonPressEvent(int playerNum, int button)
 	}
 	else if (button == C_BUTTON)
 	{
-		players[playerNum].playerShield.shieldActive = TRUE;
+		startShield(playerNum);
 	}
 	return (0);
 }
@@ -591,8 +698,11 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 
 		if (state & BUTTON_RIGHT)
 		{
-			players[0].horizontalNormal = 1;
-			playerWalking();
+			if (players[0].isMovingLeft == FALSE)
+			{
+				players[0].horizontalNormal = 1;
+				playerWalking();
+			}
 		}
 		else
 		{
@@ -606,8 +716,11 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 
 		if (state & BUTTON_LEFT)
 		{
-			players[0].horizontalNormal = -1;
-			playerWalking();
+			if (players[0].isMovingRight == FALSE)
+			{
+				players[0].horizontalNormal = -1;
+				playerWalking();
+			}
 		}
 		else
 		{
@@ -752,10 +865,10 @@ void updateDebug()
 	VDP_clearTextBG(PLAN_A, 16, 8, 4);
 	VDP_clearTextBG(PLAN_A, 16, 10, 4);
 
-	VDP_drawTextBG(PLAN_A, "debugInfo0:", 1, 6);
-	VDP_drawTextBG(PLAN_A, strPosY, 16, 6);
-	VDP_drawTextBG(PLAN_A, "debugInfo1:", 1, 8);
-	VDP_drawTextBG(PLAN_A, str_y1, 16, 8);
-	VDP_drawTextBG(PLAN_A, "debugInfo2:", 1, 10);
-	VDP_drawTextBG(PLAN_A, str_y2, 16, 10);
+	// VDP_drawTextBG(PLAN_A, "debugInfo0:", 1, 6);
+	// VDP_drawTextBG(PLAN_A, strPosY, 16, 6);
+	// VDP_drawTextBG(PLAN_A, "debugInfo1:", 1, 8);
+	// VDP_drawTextBG(PLAN_A, str_y1, 16, 8);
+	// VDP_drawTextBG(PLAN_A, "debugInfo2:", 1, 10);
+	// VDP_drawTextBG(PLAN_A, str_y2, 16, 10);
 }
