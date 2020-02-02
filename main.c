@@ -403,13 +403,15 @@ void gravity()
 			players[playerNum].velX = intToFix16(0);
 			if (players[playerNum].jumping == FALSE && players[playerNum].isMovingRight == FALSE && players[playerNum].isMovingLeft == FALSE && players[playerNum].grounded == FALSE)
 			{
-				//SPR_setAnim(players[playerNum].playerSprite, ANIM_IDLE);
+				SPR_setAnim(players[playerNum].playerSprite, ANIM_IDLE);
 				players[playerNum].grounded = TRUE;
 			}
 		}
 		else
 		{
 			players[playerNum].velY = fix16Add(players[playerNum].velY, playerGravity);
+			players[playerNum].grounded = FALSE;
+
 			playerPosClamp();
 		}
 	}
