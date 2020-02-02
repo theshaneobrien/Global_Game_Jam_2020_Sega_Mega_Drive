@@ -114,13 +114,18 @@ struct Player
 struct Player players[2];
 const int playerWidth = 64;
 const int playerHeight = 64;
-const int jumpForce = -3;
+const int jumpForce = -6;
+const int playerGravity = 15;
 const fix16 jumpDistance = FIX16(0.75);
 const int walkingFrameTime = 32;
 int p1WalkingCount = 0;
 int p2WalkingCount = 0;
+int p1TimeSInceLastShield = 0;
+int p2TimeSInceLastShield = 0;
+int movementShieldCooldown = 12;
 
 const int groundHeight = 208;
+
 
 int scrollSpeed = 1;
 int scrollAmount;
@@ -373,7 +378,7 @@ void gravity()
 		}
 		else
 		{
-			players[playerNum].velY = fix16Add(players[playerNum].velY, 6);
+			players[playerNum].velY = fix16Add(players[playerNum].velY, playerGravity);
 			playerPosClamp();
 		}
 	}
@@ -451,6 +456,7 @@ void p1WalkingCounter()
 		}
 	}
 }
+
 
 void p2WalkingCounter()
 {
@@ -558,26 +564,84 @@ void shieldTimer()
 			SPR_setAnim(players[playerNum].playerShield.shieldSprite, 0);
 			SPR_update();
 			//Start counting frames
-			p1ShieldFrameCount++;
-			if (p1ShieldFrameCount > shieldFrameTime)
+			if (playerNum==0)
 			{
+				p1ShieldFrameCount++;
+			}
+			else if (playerNum==1)
+			{
+				p2ShieldFrameCount++;
+			}
+
+			if (p1ShieldFrameCount > shieldFrameTime || p2ShieldFrameCount > shieldFrameTime)
+			{
+				//p1ShieldTimer=0;
 				SPR_setVisibility(players[playerNum].playerShield.shieldSprite, HIDDEN);
 				SPR_setAnim(players[playerNum].playerSprite, ANIM_IDLE);
 				players[playerNum].playerShield.shieldActive = FALSE;
-				p1ShieldFrameCount = 0;
+
+				if (playerNum==0)
+				{
+					p1ShieldFrameCount = 0;
+					p1TimeSInceLastShield = 0;
+					
+				}
+				else if (playerNum==1)
+				{
+					p2ShieldFrameCount = 0;
+					p2TimeSInceLastShield = 0;
+
+				}
+
 			}
 		}
+		else
+		{
+				if (playerNum==0)
+				{
+					p1TimeSInceLastShield++;
+					
+				}
+				else if (playerNum==1)
+				{
+					p2TimeSInceLastShield++;
+				}
+
+		}
+		
 	}
 }
 
 void startShield(int playerNum)
-{
+{	
+	// Don't allow player to shield while moving, but allow if jumping and moving in mid-air
+	if ((players[playerNum].isMovingRight == TRUE || players[playerNum].isMovingLeft == TRUE) && players[playerNum].jumping==FALSE)
+	{
+		return 0;
+	}
+
+	// Don't be tooooo hasty ;)
+	if(playerNum == 0 && p1TimeSInceLastShield < movementShieldCooldown)
+	{
+		return 0;
+	}
+	if(playerNum == 1 && p2TimeSInceLastShield < movementShieldCooldown)
+	{
+		return 0;
+	}
+
 	players[playerNum].playerShield.shieldActive = TRUE;
+	XGM_setPCM(65, &shield, 5632);
+	XGM_startPlayPCM(65, 1, SOUND_PCM_CH2);
+
 }
 
 //Projectiles
 int fireProjectile(int playerNum)
 {
+	XGM_setPCM(65, &shoot, 8704);
+	XGM_startPlayPCM(65, 1, SOUND_PCM_CH2);
+
 	for (int projNum = 0; projNum < 2; projNum++)
 	{
 		if(inPlayRaquetBalls < 2 && projectiles[projNum].inPlay == FALSE)
@@ -662,6 +726,8 @@ void checkProjShieldCollision()
 void shieldCollision(int projNum, int shieldHitNum)
 {
 	hitFreeze = TRUE;
+	XGM_setPCM(65, &deflect, 7168);
+	XGM_startPlayPCM(65, 1, SOUND_PCM_CH2);
 	projectiles[projNum].currentOwner = shieldHitNum;
 	players[projectiles[projNum].originalOwner].hasActiveProjectile = FALSE;
 	projectiles[projNum].direction = projectiles[projNum].direction * -1;
