@@ -29,8 +29,9 @@ struct Projectile
 	Sprite *projectileSprite;
 	fix16 posX;
 	fix16 posY;
-	int projectileSpeed;
-	int projectileOwner;
+	int speed;
+	int currentOwner;
+	int originalOwner;
 	int direction;
 	int hitCount;
 };
@@ -78,6 +79,7 @@ struct Player
 	bool grounded;
 	bool isMovingRight;
 	bool isMovingLeft;
+	bool hasActiveProjectile;
 	int horizontalNormal;
 	int verticalNormal;
 	int moveConstraintXLeft;
@@ -527,7 +529,9 @@ int fireProjectile(int playerNum)
 			projectiles[projNum].inPlay = FALSE;
 			projectiles[projNum].posY = players[playerNum].posY +intToFix16(projectileSpawnYOffset);
 			projectiles[projNum].posX = players[playerNum].posX + intToFix16(projectileSpawnXOffset);
-			projectiles[projNum].projectileOwner = playerNum;
+			projectiles[projNum].currentOwner = playerNum;
+			projectiles[projNum].originalOwner = playerNum;
+			players[playerNum].hasActiveProjectile = TRUE;
 			if(playerNum == PLAYER_2)
 			{
 				projectiles[projNum].direction = -1;
@@ -550,8 +554,8 @@ void projectileMovement()
 	{
 		if (projectiles[projNum].inPlay == TRUE)
 		{
-			projectiles[projNum].projectileSpeed = projectileStartSpeed;
-			projectiles[projNum].posX = fix16Add(projectiles[projNum].posX, intToFix16(projectiles[projNum].projectileSpeed * projectiles[projNum].direction));
+			projectiles[projNum].speed = projectileStartSpeed;
+			projectiles[projNum].posX = fix16Add(projectiles[projNum].posX, intToFix16(projectiles[projNum].speed * projectiles[projNum].direction));
 			SPR_setPosition(projectiles[projNum].projectileSprite, fix16ToInt(projectiles[projNum].posX), fix16ToInt(projectiles[projNum].posY));
 			if (projectiles[projNum].posX > intToFix16(screenWidth) || projectiles[projNum].posX < intToFix16(0))
 			{
@@ -569,6 +573,7 @@ void killProjectile(int projNum)
 	projectiles[projNum].posX = intToFix16(screenWidth / 2);
 	projectiles[projNum].hitCount = 0;
 	inPlayRaquetBalls--;
+	players[projectiles[projNum].currentOwner].hasActiveProjectile = FALSE;
 }
 
 //Collision
@@ -584,7 +589,7 @@ void checkProjShieldCollision()
 				{
 					if (projectiles[projNum].posY < intToFix16(players[shieldHitNum].playerShield.posY + shieldHeight) && projectiles[projNum].posY + intToFix16(projectileHitSize) >= intToFix16(players[shieldHitNum].playerShield.posY))
 					{
-						if (projectiles[projNum].projectileOwner != players[shieldHitNum].playerShield.shieldOwner)
+						if (projectiles[projNum].currentOwner != players[shieldHitNum].playerShield.shieldOwner)
 						{
 							shieldCollision(projNum, shieldHitNum);
 						}
@@ -597,7 +602,8 @@ void checkProjShieldCollision()
 
 void shieldCollision(int projNum, int shieldHitNum)
 {
-	projectiles[projNum].projectileOwner = shieldHitNum;
+	projectiles[projNum].currentOwner = shieldHitNum;
+	players[projectiles[projNum].originalOwner].hasActiveProjectile = FALSE;
 	projectiles[projNum].direction = projectiles[projNum].direction * -1;
 	projectiles[projNum].hitCount++;
 	if (projectiles[projNum].hitCount > 3)
@@ -618,7 +624,7 @@ void checkProjPlayerCollision()
 				{
 					if (projectiles[projNum].posY < intToFix16(players[playerHitNum].hitbox.posY + players[playerHitNum].hitbox.height) && projectiles[projNum].posY + intToFix16(projectileHitSize) >= intToFix16(players[playerHitNum].hitbox.posY))
 					{
-						if (projectiles[projNum].projectileOwner != playerHitNum)
+						if (projectiles[projNum].currentOwner != playerHitNum)
 						{
 							playerCollision(projNum, playerHitNum);
 						}
@@ -660,7 +666,10 @@ int buttonPressEvent(int playerNum, int button)
 	}
 	else if (button == B_BUTTON)
 	{
-		fireProjectile(playerNum);
+		if(players[playerNum].hasActiveProjectile == FALSE)
+		{
+			fireProjectile(playerNum);			
+		}
 	}
 	else if (button == C_BUTTON)
 	{
