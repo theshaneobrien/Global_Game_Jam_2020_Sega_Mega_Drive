@@ -837,7 +837,10 @@ int buttonPressEvent(int playerNum, int button)
 	}
 	else if(button = START_BUTTON)
 	{
-		loadGameplay();
+		if(atTitleScreen == TRUE)
+		{
+			loadGameplay();
+		}
 	}
 	return (0);
 }
