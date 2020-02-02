@@ -196,7 +196,7 @@ int main()
 				{
 					countdown++;
 
-					if (countdown > 350)
+					if (countdown > 330)
 					{
 						SYS_hardReset();
 					}
@@ -902,7 +902,7 @@ void scrollBackground()
 //Input Stuff
 int buttonPressEvent(int playerNum, int button)
 {
-	if(gameOn)
+	if(gameOn && !countDownToReset)
 		{
 		if (button == A_BUTTON)
 		{
