@@ -113,6 +113,15 @@ int p1TimeSInceLastShield = 0;
 int p2TimeSInceLastShield = 0;
 int movementShieldCooldown = 12;
 
+bool player1Damaged = FALSE;
+int player1FlickerCount = 0;
+
+bool player2Damaged = FALSE;
+int player2FlickerCount = 0;
+
+bool countDownToReset = FALSE;
+int countdown = 0;
+
 const int groundHeight = 208;
 
 int scrollSpeed = 1;
@@ -149,6 +158,7 @@ void playerCollision(int projNum, int playerHitNum);
 int countFrames();
 void scrollBackground();
 void gameplayMusic();
+void flickerPlayers();
 
 //Button Functions
 int buttonPressEvent(int playerNum, int button);
@@ -180,6 +190,17 @@ int main()
 				p2WalkingCounter();
 				checkProjShieldCollision();
 				checkProjPlayerCollision();
+				flickerPlayers();
+
+				if(countDownToReset==TRUE)
+				{
+					countdown++;
+
+					if (countdown > 330)
+					{
+						SYS_hardReset();
+					}
+				}
 			}
 		} 
 		//Wait for the frame to finish rendering
@@ -638,6 +659,44 @@ void shieldTimer()
 	}
 }
 
+void flickerPlayers()
+{	
+		if (player1Damaged==TRUE)
+		{
+			player1FlickerCount++;
+		}
+		if (player2Damaged==TRUE)
+		{
+			player2FlickerCount++;
+		}
+
+
+		if (player1FlickerCount < 50 && player1Damaged==TRUE)
+		{
+			SPR_setVisibility(players[0].playerSprite, frameCount % 2 == 0 ? HIDDEN : VISIBLE);
+		}
+		else if (player1FlickerCount > 50)
+		{
+			SPR_setVisibility(players[0].playerSprite, VISIBLE);
+			player1Damaged = FALSE;
+			player1FlickerCount = 0;
+		}
+
+		if (player2FlickerCount < 50 && player2Damaged==TRUE)
+		{
+			SPR_setVisibility(players[1].playerSprite, frameCount % 2 == 0 ? HIDDEN : VISIBLE);
+		}
+		else if (player2FlickerCount > 50)
+		{
+			SPR_setVisibility(players[1].playerSprite, VISIBLE);
+			player2Damaged = FALSE;
+			player2FlickerCount = 0;
+		}
+
+
+
+}
+
 void startShield(int playerNum)
 {	
 	// Don't allow player to shield while moving, but allow if jumping and moving in mid-air
@@ -758,8 +817,14 @@ void shieldCollision(int projNum, int shieldHitNum)
 	players[projectiles[projNum].originalOwner].hasActiveProjectile = FALSE;
 	projectiles[projNum].direction = projectiles[projNum].direction * -1;
 	projectiles[projNum].hitCount++;
-	SPR_setPalette(projectiles[projNum].projectileSprite, PAL2);
-	
+
+	/*
+	if (projectiles[projNum].hitCount > 2)
+	{
+		SPR_setPalette(projectiles[projNum].projectileSprite, PAL3);
+	}
+	*/
+
 	if (projectiles[projNum].hitCount > 3)
 	{
 		killProjectile(projNum);
@@ -794,10 +859,12 @@ void playerCollision(int projNum, int playerHitNum)
 	hitFreeze = TRUE;
 	if(playerHitNum == 0)
 	{
-		scoreIncrement(1);
-	}else
-	{
+		player1Damaged = TRUE;
 		scoreIncrement(0);
+	}else
+	{	
+		player2Damaged = TRUE;
+		scoreIncrement(1);
 	}
 	
 	killProjectile(projNum);
@@ -812,14 +879,17 @@ void scoreIncrement(int playerNum)
 	if(players[0].score >= 10)
 	{
 		XGM_stopPlay();
+		XGM_setLoopNumber(0);
 		XGM_startPlay(&winnermusic);
 		SPR_setVisibility(players[0].winSprite, VISIBLE);
+		countDownToReset = TRUE;
 	}
 	if(players[1].score == 10)
 	{
 		XGM_stopPlay();
 		XGM_startPlay(&winnermusic);
 		SPR_setVisibility(players[1].winSprite, VISIBLE);
+		countDownToReset = TRUE;
 	}
 }
 
@@ -835,7 +905,7 @@ void scrollBackground()
 //Input Stuff
 int buttonPressEvent(int playerNum, int button)
 {
-	if(gameOn)
+	if(gameOn && !countDownToReset)
 		{
 		if (button == A_BUTTON)
 		{
