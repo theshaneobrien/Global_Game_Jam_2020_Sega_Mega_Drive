@@ -16,23 +16,6 @@
 #include <resources.h>
 #include <string.h>
 
-//Screen
-int desiredScreenWidth = 320;
-int desiredScreenHeight = 224;
-
-//Strings
-char player1[10] = "Player 1\0";
-char player2[10] = "Player 2\0";
-char pressStart[13] = "Press Start\0";
-char gameStarting[15] = "Game Starting\0";
-char number1[3] = "1\0";
-char number2[3] = "2\0";
-char number3[3] = "3\0";
-char score[7] = "Score\0";
-char winner[8] = "Winner\0";
-char credits[23] = "Clare, Shane, Padraig\0";
-char logo[6] = "LOGO\0";
-
 //GameplayState
 bool atTitleScreen = TRUE;
 bool preGameCountdown = FALSE;
@@ -98,6 +81,7 @@ struct Player
 {
 	Sprite *playerSprite;
 	Sprite *scoreSprite;
+	Sprite *winSprite;
 	fix16 posX;
 	fix16 velX;
 	fix16 posY;
@@ -169,11 +153,6 @@ void gameplayMusic();
 //Button Functions
 int buttonPressEvent(int playerNum, int button);
 
-//Debug
-Sprite *debug1;
-Sprite *debug2;
-Sprite *debug3;
-Sprite *debug4;
 void updateDebug();
 
 static void myJoyHandler(u16 joy, u16 changed, u16 state);
@@ -235,10 +214,6 @@ void titleScreen()
 	//First pallet is the background color
 	//SHANE THIS IS USEFUL
 	VDP_setPaletteColor(0, RGB24_TO_VDPCOLOR(0x00000));
-
-	VDP_setTextPlan(PLAN_A);
-	VDP_drawText(logo, 16, 10);
-	VDP_drawText(pressStart, 13,12);
 }
 
 void loadGameplay()
@@ -348,6 +323,15 @@ void setupPlayers()
 	players[1].hitbox.offset = (-playerWidth / 2) + 64;
 	//Score
 	players[1].score = 0;
+
+	//Win Sprites
+	players[0].winSprite = SPR_addSprite(&winSprite, (screenWidth / 2) - 68, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	SPR_setAnim(players[0].scoreSprite, 0);
+	SPR_setVisibility(players[0].winSprite, HIDDEN);
+	
+	players[1].winSprite = SPR_addSprite(&winSprite, (screenWidth / 2) - 68, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	SPR_setAnim(players[1].scoreSprite, 1);
+	SPR_setVisibility(players[1].winSprite, HIDDEN);
 
 	//Insert the player sprites at the above positions
 	players[0].playerSprite = SPR_addSprite(&player1Sprite, fix16ToInt(players[0].posX), fix16ToInt(players[0].posY), TILE_ATTR(PAL1, 0, FALSE, FALSE));
@@ -824,12 +808,18 @@ void scoreIncrement(int playerNum)
 	//change score score sprite anim
 	SPR_setAnim(players[playerNum].scoreSprite, players[playerNum].score);
 
-	if(players[playerNum].score == 10)
+	if(players[0].score >= 10)
 	{
 		XGM_stopPlay();
-		XGM_startPlay(&winner);
+		XGM_startPlay(&winnermusic);
+		SPR_setVisibility(players[0].winSprite, VISIBLE);
 	}
-
+	if(players[1].score == 10)
+	{
+		XGM_stopPlay();
+		XGM_startPlay(&winnermusic);
+		SPR_setVisibility(players[1].winSprite, VISIBLE);
+	}
 }
 
 //Background Effects
