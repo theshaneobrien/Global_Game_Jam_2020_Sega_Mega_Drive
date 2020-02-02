@@ -8,6 +8,7 @@ extern const u8 shoot[8704];
 extern const SpriteDefinition player1Sprite;
 extern const SpriteDefinition shieldSprite;
 extern const SpriteDefinition projectileSprite;
+extern const SpriteDefinition countDown;
 extern const SpriteDefinition debug;
 extern const Image BGBuildings;
 extern const Image BGClouds;

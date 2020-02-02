@@ -36,6 +36,10 @@ char logo[6] = "LOGO\0";
 //GameplayState
 bool atTitleScreen = TRUE;
 bool preGameCountdown = FALSE;
+bool gameOn = FALSE;
+int gameCounter = 0;
+int gameCountDuration = 150;
+Sprite * countDownSprite;
 bool hitFreeze = FALSE;
 int hitCounter = 0;
 int hitFreezeDuration = 10;
@@ -132,6 +136,9 @@ int scrollAmount;
 int frameCount = 0;
 
 void init();
+void titleScreen();
+void loadGameplay();
+void gameCountdown();
 void setupPlayField();
 void setupPlayers();
 void hitFreezeCount();
@@ -176,21 +183,25 @@ int main()
 	init();
 	while (1)
 	{
+		gameCountdown();
 		hitFreezeCount();
-		if(hitFreeze == FALSE)
+		if(gameOn == TRUE)
 		{
-			countFrames();
-			scrollBackground();
-			//Updates Sprites Position / Animation Frame
-			SPR_update();
-			gravity();
-			setPlayerPosition();
-			shieldTimer();
-			projectileMovement();
-			p1WalkingCounter();
-			p2WalkingCounter();
-			checkProjShieldCollision();
-			checkProjPlayerCollision();
+			if(hitFreeze == FALSE)
+			{
+				countFrames();
+				scrollBackground();
+				//Updates Sprites Position / Animation Frame
+				SPR_update();
+				gravity();
+				setPlayerPosition();
+				shieldTimer();
+				projectileMovement();
+				p1WalkingCounter();
+				p2WalkingCounter();
+				checkProjShieldCollision();
+				checkProjPlayerCollision();
+			}
 		}
 		//Wait for the frame to finish rendering
 		VDP_waitVSync();
@@ -235,6 +246,26 @@ void loadGameplay()
 	VDP_clearPlan(PLAN_B, TRUE);
 	setupPlayField();
 	setupPlayers();
+	VDP_setPalette(PAL2, countDown.palette->data);
+	countDownSprite = SPR_addSprite(&countDown, (screenWidth / 2) - 32, 64, TILE_ATTR(PAL2,0,FALSE,FALSE));
+	SPR_setAnim(countDownSprite, 0);
+	preGameCountdown = TRUE;
+}
+
+void gameCountdown()
+{
+	if(preGameCountdown == TRUE)
+	{
+		SPR_update();
+		gameCounter++;
+		if(gameCounter > gameCountDuration)
+		{
+			SPR_releaseSprite(countDownSprite);
+			gameCounter = 0;
+			preGameCountdown == FALSE;
+			gameOn = TRUE;
+		}
+	}
 }
 
 void setupMusic()
