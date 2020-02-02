@@ -181,7 +181,7 @@ int main()
 				checkProjShieldCollision();
 				checkProjPlayerCollision();
 			}
-		}
+		} 
 		//Wait for the frame to finish rendering
 		VDP_waitVSync();
 		updateDebug();
@@ -832,22 +832,25 @@ void scrollBackground()
 //Input Stuff
 int buttonPressEvent(int playerNum, int button)
 {
-	if (button == A_BUTTON)
-	{
-		playerJumping(playerNum, players[playerNum].horizontalNormal);
-	}
-	else if (button == B_BUTTON)
-	{
-		if(players[playerNum].hasActiveProjectile == FALSE)
+	if(gameOn)
 		{
-			fireProjectile(playerNum);			
+		if (button == A_BUTTON)
+		{
+			playerJumping(playerNum, players[playerNum].horizontalNormal);
+		}
+		else if (button == B_BUTTON)
+		{
+			if(players[playerNum].hasActiveProjectile == FALSE)
+			{
+				fireProjectile(playerNum);			
+			}
+		}
+		else if (button == C_BUTTON)
+		{
+			startShield(playerNum);
 		}
 	}
-	else if (button == C_BUTTON)
-	{
-		startShield(playerNum);
-	}
-	else if(button = START_BUTTON)
+	if(button = START_BUTTON)
 	{
 		if(atTitleScreen == TRUE)
 		{
