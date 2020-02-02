@@ -326,11 +326,9 @@ void setupPlayers()
 
 	//Win Sprites
 	players[0].winSprite = SPR_addSprite(&winSprite, (screenWidth / 2) - 68, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
-	SPR_setAnim(players[0].scoreSprite, 0);
 	SPR_setVisibility(players[0].winSprite, HIDDEN);
 	
 	players[1].winSprite = SPR_addSprite(&winSprite, (screenWidth / 2) - 68, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
-	SPR_setAnim(players[1].scoreSprite, 1);
 	SPR_setVisibility(players[1].winSprite, HIDDEN);
 
 	//Insert the player sprites at the above positions
