@@ -273,6 +273,9 @@ void setupPlayField()
 
 	cloudBackground = unpackMap(BGClouds.map, NULL);
 	VDP_setMapEx(PLAN_B, cloudBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, currentIndex), 0, 0, 0, 0, 64, 28);
+	VDP_fadePal(PAL3, palette_black, BGBuildings.palette->data, 60, 0);
+
+	VDP_waitFadeCompletion();
 }
 
 void setupPlayers()
