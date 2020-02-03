@@ -6,8 +6,11 @@ https://globalgamejam.org/2020/games/right-2-repair-3
 
 ## Controls
 D-Pad Left/Right: Move Left/Right
+
 A Button: Jump
+
 B Button: Shoot
+
 C Button: Deflect
 
 ## Tools Used
