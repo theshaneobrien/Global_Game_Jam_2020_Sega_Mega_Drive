@@ -9,7 +9,9 @@ https://github.com/theshaneobrien/Global_Game_Jam_2020/blob/master/out/Right2Rep
 
 ## Images
 ![](images/game.jpg?raw=true)
+
 ![](images/box.png?raw=true)
+
 ![](images/team.jpg?raw=true)
 
 ## Controls
@@ -23,8 +25,11 @@ C Button: Deflect
 
 ## Tools Used
 [SGDK](https://github.com/Stephane-D/SGDK)
+
 [Aseprite](https://store.steampowered.com/app/431730/Aseprite/)
+
 [Deflemask](http://www.deflemask.com/)
+
 [Visual Studio Code](https://code.visualstudio.com/)
 
 ## How to build
