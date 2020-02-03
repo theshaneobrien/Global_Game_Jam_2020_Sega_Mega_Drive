@@ -7,7 +7,7 @@ https://globalgamejam.org/2020/games/right-2-repair-3
 ## Rom Download
 
 ## Images
-![](images/game?raw=true)
+![](images/game.jpg?raw=true)
 ![](images/box.png?raw=true)
 ![](images/team.jpg?raw=true)
 
