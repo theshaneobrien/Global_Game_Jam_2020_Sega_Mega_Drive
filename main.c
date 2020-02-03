@@ -162,9 +162,6 @@ void flickerPlayers();
 
 //Button Functions
 int buttonPressEvent(int playerNum, int button);
-
-void updateDebug();
-
 static void myJoyHandler(u16 joy, u16 changed, u16 state);
 
 int main()
@@ -207,7 +204,6 @@ int main()
 		} 
 		//Wait for the frame to finish rendering
 		VDP_waitVSync();
-		updateDebug();
 	}
 	return (0);
 }
@@ -373,12 +369,6 @@ void setupPlayers()
 
 	shields[0] = players[0].playerShield;
 	shields[1] = players[1].playerShield;
-
-	//debug
-	// debug1 = SPR_addSprite(&debug, players[1].hitbox.posY + players[1].hitbox.width, players[1].hitbox.posY + players[1].hitbox.height, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	// debug2 = SPR_addSprite(&debug, players[1].hitbox.posY, players[1].hitbox.posY + players[1].hitbox.height, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	// debug3 = SPR_addSprite(&debug, players[1].hitbox.posY + players[1].hitbox.width, players[1].hitbox.posY + players[1].hitbox.height, TILE_ATTR(PAL1, 0, FALSE, FALSE));
-	// debug4 = SPR_addSprite(&debug, players[1].hitbox.posY, players[1].hitbox.posY, TILE_ATTR(PAL1, 0, FALSE, FALSE));
 }
 
 void hitFreezeCount()
@@ -555,23 +545,6 @@ void setPlayerPosition()
 	//Players
 	for (int playerNum = 0; playerNum < 2; playerNum++)
 	{
-		//Debug
-		if(frameCount % 2 == 0)
-		{
-			// SPR_setPosition(debug1, players[0].hitbox.posX + players[0].hitbox.width, players[0].hitbox.posY);
-			// SPR_setPosition(debug2, players[0].hitbox.posX, players[0].hitbox.posY + players[0].hitbox.height);
-			// SPR_setPosition(debug3, players[0].hitbox.posX + players[0].hitbox.width, players[0].hitbox.posY + players[1].hitbox.height);
-			// SPR_setPosition(debug4, players[0].hitbox.posX, players[0].hitbox.posY);
-		}
-		else
-		{
-			// SPR_setPosition(debug1, players[1].hitbox.posX + players[1].hitbox.width, players[1].hitbox.posY);
-			// SPR_setPosition(debug2, players[1].hitbox.posX, players[1].hitbox.posY + players[1].hitbox.height);
-			// SPR_setPosition(debug3, players[1].hitbox.posX + players[1].hitbox.width, players[1].hitbox.posY + players[1].hitbox.height);
-			// SPR_setPosition(debug4, players[1].hitbox.posX, players[1].hitbox.posY);
-		}
-		
-
 		players[playerNum].playerShield.posX = fix16ToInt(players[playerNum].posX) + players[playerNum].shieldOffset;
 		players[playerNum].playerShield.posY = fix16ToInt(players[playerNum].posY);
 
@@ -820,13 +793,6 @@ void shieldCollision(int projNum, int shieldHitNum)
 	projectiles[projNum].direction = projectiles[projNum].direction * -1;
 	projectiles[projNum].hitCount++;
 
-	/*
-	if (projectiles[projNum].hitCount > 2)
-	{
-		SPR_setPalette(projectiles[projNum].projectileSprite, PAL3);
-	}
-	*/
-
 	if (projectiles[projNum].hitCount > 3)
 	{
 		killProjectile(projNum);
@@ -862,11 +828,11 @@ void playerCollision(int projNum, int playerHitNum)
 	if(playerHitNum == 0)
 	{
 		player1Damaged = TRUE;
-		scoreIncrement(0);
+		scoreIncrement(1);
 	}else
 	{	
 		player2Damaged = TRUE;
-		scoreIncrement(1);
+		scoreIncrement(0);
 	}
 	
 	killProjectile(projNum);
@@ -1108,32 +1074,4 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 			}
 		}
 	}
-}
-
-char strPosX[16] = "0";
-char str_x1[16] = "0";
-char str_x2[16] = "0";
-char strPosY[16] = "0";
-char str_y1[16] = "0";
-char str_y2[16] = "0";
-
-void updateDebug()
-{
-
-	int debugInfo1 = players[0].score;
-	int debugInfo2 = players[1].score;
-	sprintf(strPosY, "%d", inPlayRaquetBalls);
-	sprintf(str_y1, "%d", debugInfo1);
-	sprintf(str_y2, "%d", debugInfo2);
-
-	VDP_clearTextBG(PLAN_A, 16, 6, 4);
-	VDP_clearTextBG(PLAN_A, 16, 8, 4);
-	VDP_clearTextBG(PLAN_A, 16, 10, 4);
-
-	// VDP_drawTextBG(PLAN_A, "debugInfo0:", 1, 6);
-	// VDP_drawTextBG(PLAN_A, strPosY, 16, 6);
-	// VDP_drawTextBG(PLAN_A, "debugInfo1:", 1, 8);
-	// VDP_drawTextBG(PLAN_A, str_y1, 16, 8);
-	// VDP_drawTextBG(PLAN_A, "debugInfo2:", 1, 10);
-	// VDP_drawTextBG(PLAN_A, str_y2, 16, 10);
 }

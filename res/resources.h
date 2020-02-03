@@ -13,6 +13,7 @@ extern const SpriteDefinition projectileSprite;
 extern const SpriteDefinition countDown;
 extern const SpriteDefinition numbers;
 extern const SpriteDefinition winSprite;
+extern const SpriteDefinition logo;
 extern const Image BGBuildings;
 extern const Image BGClouds;
 
