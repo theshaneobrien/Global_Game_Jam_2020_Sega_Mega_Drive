@@ -26,6 +26,7 @@ Sprite * countDownSprite;
 bool hitFreeze = FALSE;
 int hitCounter = 0;
 int hitFreezeDuration = 10;
+Sprite *logoSpr;
 
 //Background MAps
 Map *mapBackground;
@@ -233,25 +234,28 @@ void titleScreen()
 	//First pallet is the background color
 	//SHANE THIS IS USEFUL
 	VDP_setPaletteColor(0, RGB24_TO_VDPCOLOR(0x00000));
+	VDP_setPalette(PAL2, logoSpr->data);
+	logoSpr = SPR_addSprite(&logoSpr, (screenWidth/2) - 64, 20,TILE_ATTR(PAL2,0,FALSE,FALSE));
+	SPR_update();
 }
 
-void loadGameplay()
-{
-	XGM_stopPlay();
-	gameplayMusic();
-	atTitleScreen = FALSE;
-	VDP_clearPlan(PLAN_A, TRUE);
-	VDP_clearPlan(PLAN_B, TRUE);
-	setupPlayField();
-	setupPlayers();
-	VDP_setPalette(PAL2, countDown.palette->data);
-	countDownSprite = SPR_addSprite(&countDown, (screenWidth / 2) - 32, 64, TILE_ATTR(PAL2,0,FALSE,FALSE));
-	players[0].scoreSprite = SPR_addSprite(&numbers, 10, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
-	SPR_setAnim(players[0].scoreSprite, 0);
-	players[1].scoreSprite  = SPR_addSprite(&numbers, 286, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
-	SPR_setAnim(players[1].scoreSprite, 0);
-	SPR_setAnim(countDownSprite, 0);
-	preGameCountdown = TRUE;
+	void loadGameplay()
+	{
+		XGM_stopPlay();
+		gameplayMusic();
+		atTitleScreen = FALSE;
+		VDP_clearPlan(PLAN_A, TRUE);
+		VDP_clearPlan(PLAN_B, TRUE);
+		setupPlayField();
+		setupPlayers();
+		VDP_setPalette(PAL2, countDown.palette->data);
+		countDownSprite = SPR_addSprite(&countDown, (screenWidth / 2) - 32, 64, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+		players[0].scoreSprite = SPR_addSprite(&numbers, 10, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+		SPR_setAnim(players[0].scoreSprite, 0);
+		players[1].scoreSprite = SPR_addSprite(&numbers, 286, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+		SPR_setAnim(players[1].scoreSprite, 0);
+		SPR_setAnim(countDownSprite, 0);
+		preGameCountdown = TRUE;
 }
 
 void gameCountdown()
