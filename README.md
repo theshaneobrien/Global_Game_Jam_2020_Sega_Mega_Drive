@@ -5,7 +5,7 @@ A Sega Mega Drive Game for Global Game Jam
 https://globalgamejam.org/2020/games/right-2-repair-3
 
 ## Rom Download
-https://github.com/theshaneobrien/Global_Game_Jam_2020/blob/master/out/Right2Repair.bin
+https://github.com/theshaneobrien/Global_Game_Jam_2020/blob/master/out/Right2Repair.bin?raw=true
 
 ## Images
 ![](images/game.jpg?raw=true)
