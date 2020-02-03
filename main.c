@@ -27,6 +27,7 @@ bool hitFreeze = FALSE;
 int hitCounter = 0;
 int hitFreezeDuration = 10;
 Sprite *logoSpr;
+Sprite *pressStartSpr;
 
 //Background MAps
 Map *mapBackground;
@@ -226,7 +227,6 @@ void init()
 
 void titleScreen()
 {
-	
 	XGM_setLoopNumber(-1);
 	XGM_startPlay(&playerselect);
 	//Set the background color
@@ -234,13 +234,16 @@ void titleScreen()
 	//First pallet is the background color
 	//SHANE THIS IS USEFUL
 	VDP_setPaletteColor(0, RGB24_TO_VDPCOLOR(0x00000));
-	VDP_setPalette(PAL2, logoSpr->data);
-	logoSpr = SPR_addSprite(&logoSpr, (screenWidth/2) - 64, 20,TILE_ATTR(PAL2,0,FALSE,FALSE));
+	VDP_setPalette(PAL2, logo.palette->data);
+	logoSpr = SPR_addSprite(&logo, (screenWidth / 2) - 64, 20, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	pressStartSpr = SPR_addSprite(&start, (screenWidth / 2) - 64, 168, TILE_ATTR(PAL2, 0, FALSE, FALSE));
 	SPR_update();
 }
 
 	void loadGameplay()
 	{
+		SPR_releaseSprite(logoSpr);
+		SPR_releaseSprite(pressStartSpr);
 		XGM_stopPlay();
 		gameplayMusic();
 		atTitleScreen = FALSE;
