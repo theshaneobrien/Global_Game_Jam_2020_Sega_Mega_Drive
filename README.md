@@ -4,6 +4,15 @@ A Sega Mega Drive Game for Global Game Jam
 ## Our Global Game Jam Submission
 https://globalgamejam.org/2020/games/right-2-repair-3
 
+## Description
+Right 2 Repair is a tactical 2 player player where players can fling projectiles at each other and deflect them back.
+
+
+Every move must be calculated, if you commit to jumping you cannot change course, if you commit to moving forward you cannot stop or move back until completed.
+
+
+First player to 10 wins!
+
 ## Rom Download
 https://github.com/theshaneobrien/Global_Game_Jam_2020/blob/master/out/Right2Repair.bin?raw=true
 
@@ -13,6 +22,9 @@ https://github.com/theshaneobrien/Global_Game_Jam_2020/blob/master/out/Right2Rep
 ![](images/box.png?raw=true)
 
 ![](images/team.jpg?raw=true)
+
+## Video
+[![](https://img.youtube.com/vi/S1OBmK32yp0/0.jpg)](https://www.youtube.com/watch?v=S1OBmK32yp0)
 
 ## Controls
 D-Pad Left/Right: Move Left/Right
