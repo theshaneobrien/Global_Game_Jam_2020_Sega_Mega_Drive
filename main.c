@@ -141,8 +141,9 @@ int chanceToFire = 5;
 int chanceToMoveLeft = 55;
 int chanceToMoveRight = 45;
 int chanceToJump = 8;
+//why am I doing this twice?
 int frameToWaitBefore = 10;
-int frameToWaitCount = 25;
+int frameToWaitCount = 0;
 
 const int groundHeight = 208;
 
