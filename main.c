@@ -29,6 +29,8 @@ int hitFreezeDuration = 10;
 Sprite *logoSpr;
 Sprite *pressStartSpr;
 
+bool singlePlayer = TRUE;
+
 //Background MAps
 Map *mapBackground;
 Map *cloudBackground;
@@ -45,6 +47,7 @@ struct Projectile
 	int originalOwner;
 	int direction;
 	int hitCount;
+	int distanceFromTarget;
 };
 int projectileHitSize = 8;
 int projectileSpawnXOffset = 32;
@@ -117,12 +120,27 @@ int movementShieldCooldown = 12;
 
 bool player1Damaged = FALSE;
 int player1FlickerCount = 0;
-
 bool player2Damaged = FALSE;
 int player2FlickerCount = 0;
 
 bool countDownToReset = FALSE;
 int countdown = 0;
+
+//BAD AI Stuff
+struct Player *aiPLayer;
+
+//Potentially wrap in struct to have selectable difficulties / attitudes
+int aiMovementDelayCounter = 0;
+int aiMovementDelayMin = 2;
+int aiMovementDelayMax = 10;
+int aiFireDelayCounter = 0;
+int aiFireDelay = 12;
+int minDeflectWindow = 55;
+int maxDeflectWindow = 78;
+int chanceToFire = 53;
+int chanceToMoveLeft = 55;
+int chanceToMoveRight = 45;
+int chanceToJump = 8;
 
 const int groundHeight = 208;
 
@@ -161,6 +179,7 @@ int countFrames();
 void scrollBackground();
 void gameplayMusic();
 void flickerPlayers();
+void aiControlled();
 
 //Button Functions
 int buttonPressEvent(int playerNum, int button);
@@ -177,6 +196,7 @@ int main()
 		{
 			if(hitFreeze == FALSE)
 			{
+				aiControlled();
 				countFrames();
 				scrollBackground();
 				//Updates Sprites Position / Animation Frame
@@ -376,6 +396,8 @@ void setupPlayers()
 
 	shields[0] = players[0].playerShield;
 	shields[1] = players[1].playerShield;
+
+	aiPLayer = &players[PLAYER_2];
 }
 
 void hitFreezeCount()
@@ -501,8 +523,8 @@ void p1WalkingCounter()
 			}
 		}
 	}
-}
 
+}
 
 void p2WalkingCounter()
 {
@@ -565,6 +587,9 @@ void setPlayerPosition()
 
 void playerPosClamp()
 {
+	char left[6] = "left\0";
+	char right[7] = "right\0";
+	
 	for (int playerNum = 0; playerNum < 2; playerNum++)
 	{
 		if (players[playerNum].posX < intToFix16(players[playerNum].moveConstraintXLeft))
@@ -653,22 +678,22 @@ void flickerPlayers()
 		}
 
 
-		if (player1FlickerCount < 50 && player1Damaged==TRUE)
+		if (player1FlickerCount < 25 && player1Damaged==TRUE)
 		{
 			SPR_setVisibility(players[0].playerSprite, frameCount % 2 == 0 ? HIDDEN : VISIBLE);
 		}
-		else if (player1FlickerCount > 50)
+		else if (player1FlickerCount > 25)
 		{
 			SPR_setVisibility(players[0].playerSprite, VISIBLE);
 			player1Damaged = FALSE;
 			player1FlickerCount = 0;
 		}
 
-		if (player2FlickerCount < 50 && player2Damaged==TRUE)
+		if (player2FlickerCount < 25 && player2Damaged==TRUE)
 		{
 			SPR_setVisibility(players[1].playerSprite, frameCount % 2 == 0 ? HIDDEN : VISIBLE);
 		}
-		else if (player2FlickerCount > 50)
+		else if (player2FlickerCount > 25)
 		{
 			SPR_setVisibility(players[1].playerSprite, VISIBLE);
 			player2Damaged = FALSE;
@@ -760,7 +785,8 @@ void killProjectile(int projNum)
 {
 	projectiles[projNum].inPlay = FALSE;
 	SPR_setVisibility(projectiles[projNum].projectileSprite, HIDDEN);
-	projectiles[projNum].posX = intToFix16(screenWidth / 2);
+	projectiles[projNum].posX = intToFix16(-16);
+	projectiles[projNum].posY = intToFix16(-16);
 	projectiles[projNum].hitCount = 0;
 	inPlayRaquetBalls--;
 	players[projectiles[projNum].currentOwner].hasActiveProjectile = FALSE;
@@ -875,6 +901,113 @@ void scrollBackground()
 	{
 		VDP_setHorizontalScroll(PLAN_B, scrollAmount -= scrollSpeed);
 	}
+}
+
+//AI
+void aiControlled()
+{
+	shouldAIDeflect();
+	aiMovementDelayCounter++;
+	aiFireDelayCounter++;
+	if (aiMovementDelayCounter > aiMovementDelayMax)
+	{
+		if(singlePlayer == TRUE)
+		{
+			if(players[1].grounded == TRUE)
+			{
+				players[1].horizontalNormal = aiVelDirection();
+				playerWalking();
+				shouldAIJump();
+			}
+		}
+		aiMovementDelayCounter = 0;
+	}
+
+	if(aiFireDelayCounter > aiFireDelay)
+	{
+		shouldAIFire();
+		aiFireDelayCounter = 0;
+	}
+}
+
+int aiVelDirection()
+{
+	//We should factor in player distance and score to make more / less aggro
+	int x = randomRange(0, 100);
+	getPlayerDistance();
+	if (x > chanceToMoveLeft)
+	{
+		if (players[1].posX > intToFix16(players[1].moveConstraintXLeft))
+		{
+			return -1;
+		}
+	}
+	else if (x < chanceToMoveRight)
+	{
+		if (players[1].posX < intToFix16(players[1].moveConstraintXRight))
+		{
+			return 1;
+		}
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+int shouldAIFire()
+{
+	//Is there a reason to not fire?
+	int x = randomRange(0, 100);
+	if (x > chanceToFire)
+	{
+		buttonPressEvent(PLAYER_2, B_BUTTON);
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+void shouldAIDeflect()
+{
+	//could we potentially jump to avoid?
+	for (u8 i = 0; i < 2; i++)
+	{
+		if(projectiles[i].currentOwner != PLAYER_2)
+		{
+			projectiles[i].distanceFromTarget = fix16ToInt(fix16Sub(aiPLayer->posX, projectiles[i].posX));
+			if (projectiles[i].distanceFromTarget < randomRange(minDeflectWindow, maxDeflectWindow))
+			{
+				buttonPressEvent(PLAYER_2, C_BUTTON);
+			}
+		}
+	}
+}
+
+int shouldAIJump()
+{
+	int x = randomRange(0, 100);
+	if (x > chanceToFire)
+	{
+		buttonPressEvent(PLAYER_2, A_BUTTON);
+	}
+}
+
+//Utils
+
+int getPlayerDistance()
+{
+	int distance = fix16ToInt(aiPLayer->posX - players[0].posX);
+	return distance;
+}
+
+int randomRange(int min, int max)
+{
+	int range = max - min;
+	int randNumber = random() % range;
+	
+	return (randNumber + min);
 }
 
 //Input Stuff
