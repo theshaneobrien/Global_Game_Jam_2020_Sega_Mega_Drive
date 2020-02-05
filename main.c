@@ -134,13 +134,15 @@ int aiMovementDelayCounter = 0;
 int aiMovementDelayMin = 2;
 int aiMovementDelayMax = 10;
 int aiFireDelayCounter = 0;
-int aiFireDelay = 12;
+int aiFireDelay = 50;
 int minDeflectWindow = 55;
 int maxDeflectWindow = 78;
-int chanceToFire = 53;
+int chanceToFire = 5;
 int chanceToMoveLeft = 55;
 int chanceToMoveRight = 45;
 int chanceToJump = 8;
+int frameToWaitBefore = 10;
+int frameToWaitCount = 25;
 
 const int groundHeight = 208;
 
@@ -957,15 +959,19 @@ int aiVelDirection()
 
 int shouldAIFire()
 {
-	//Is there a reason to not fire?
-	int x = randomRange(0, 100);
-	if (x > chanceToFire)
+	frameToWaitCount++;
+	if(frameToWaitCount > frameToWaitBefore)
 	{
-		buttonPressEvent(PLAYER_2, B_BUTTON);
-	}
-	else
-	{
-		return 0;
+		//Is there a reason to not fire?
+		int x = randomRange(0, 100);
+		if (x > chanceToFire)
+		{
+			buttonPressEvent(PLAYER_2, B_BUTTON);
+		}
+		else
+		{
+			return 0;
+		}
 	}
 }
 
@@ -988,7 +994,7 @@ void shouldAIDeflect()
 int shouldAIJump()
 {
 	int x = randomRange(0, 100);
-	if (x > chanceToFire)
+	if (x > chanceToJump)
 	{
 		buttonPressEvent(PLAYER_2, A_BUTTON);
 	}
