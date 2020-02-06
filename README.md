@@ -28,7 +28,9 @@ First player to 10 wins!
 ![](images/team.jpg?raw=true)
 
 ## Video
-[![](https://img.youtube.com/vi/S1OBmK32yp0/0.jpg)](https://www.youtube.com/watch?v=S1OBmK32yp0)
+[![](images/GIF.gif?raw=true)](https://www.youtube.com/watch?v=S1OBmK32yp0)
+
+Click for Audio!
 
 ## Controls
 D-Pad Left/Right: Move Left/Right
