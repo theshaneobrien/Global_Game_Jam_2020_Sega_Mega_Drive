@@ -143,8 +143,8 @@ int aiMovementDelayMax = 10;
 int aiFireDelayCounter = 0;
 int aiFireDelay = 50;
 int minDeflectWindow = 55;
-int maxDeflectWindow = 78;
-int chanceToFire = 5;
+int maxDeflectWindow = 85;
+int chanceToFire = 4;
 int chanceToMoveLeft = 55;
 int chanceToMoveRight = 45;
 int chanceToJump = 3;
@@ -309,10 +309,10 @@ void modeSelect(int cursorInd)
 
 void loadGameplay()
 {
-	SPR_setVisibility(pressStartSpr, HIDDEN);
-	SPR_setVisibility(player1Spr, HIDDEN);
-	SPR_setVisibility(player2Spr, HIDDEN);
-	SPR_setVisibility(logoSpr, HIDDEN);
+	SPR_releaseSprite(pressStartSpr);
+	SPR_releaseSprite(player1Spr);
+	SPR_releaseSprite(player2Spr);
+	SPR_releaseSprite(logoSpr);
 
 	XGM_stopPlay();
 	gameplayMusic();
@@ -1008,9 +1008,9 @@ int aiVelDirection()
 
 int shouldAIFire()
 {
-	frameToWaitCount++;
-	if(frameToWaitCount > frameToWaitBefore)
-	{
+	//frameToWaitCount++;
+	//if(frameToWaitCount > frameToWaitBefore)
+	//{
 		//Is there a reason to not fire?
 		int x = randomRange(0, 100);
 		if (x > chanceToFire)
@@ -1021,7 +1021,7 @@ int shouldAIFire()
 		{
 			return 0;
 		}
-	}
+	//}
 }
 
 void shouldAIDeflect()
