@@ -14,8 +14,9 @@ Every move must be calculated, if you commit to jumping you cannot change course
 First player to 10 wins!
 
 ## Rom Download
-Latest Build: https://github.com/theshaneobrien/Global_Game_Jam_2020/blob/master/out/rom.bin?raw=true
-Global Game Jam version: https://github.com/theshaneobrien/Global_Game_Jam_2020/blob/master/out/Right2RepairGGJ2020.bin?raw=true
+[Latest Master Branch Build](https://github.com/theshaneobrien/Global_Game_Jam_2020/blob/master/out/rom.bin?raw=true)
+
+[Global Game Jam Build](https://github.com/theshaneobrien/Global_Game_Jam_2020/blob/master/out/Right2RepairGGJ2020.bin?raw=true)
 
 
 
