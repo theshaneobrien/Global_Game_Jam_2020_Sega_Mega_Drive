@@ -14,6 +14,10 @@ SPRITE winSprite "sprites\gameOver.png" 16 16 0 50
 SPRITE logo "sprites\LogoStart.png" 16 16 0 50
 SPRITE start "sprites\PressStart.png" 16 2 0 50
 
+SPRITE player1Text "sprites\1player.png" 8 4 0 50
+SPRITE player2Text "sprites\2player.png" 8 4 0 50
+SPRITE cursor "sprites\arrow.png" 4 4 0 50
+
 //Music
 XGM music "sound/ggj2020.vgm"
 XGM winnermusic "sound/winner.vgm"

@@ -15,6 +15,9 @@ extern const SpriteDefinition numbers;
 extern const SpriteDefinition winSprite;
 extern const SpriteDefinition logo;
 extern const SpriteDefinition start;
+extern const SpriteDefinition player1Text;
+extern const SpriteDefinition player2Text;
+extern const SpriteDefinition cursor;
 extern const Image BGBuildings;
 extern const Image BGClouds;
 

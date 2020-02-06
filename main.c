@@ -26,8 +26,15 @@ Sprite * countDownSprite;
 bool hitFreeze = FALSE;
 int hitCounter = 0;
 int hitFreezeDuration = 10;
+
+//MenuStuff
 Sprite *logoSpr;
 Sprite *pressStartSpr;
+Sprite *player1Spr;
+Sprite *player2Spr;
+Sprite *cursorSpr;
+int modeSelected[2] = {128, 144};
+int cursorPos = 0;
 
 bool singlePlayer = TRUE;
 
@@ -140,7 +147,7 @@ int maxDeflectWindow = 78;
 int chanceToFire = 5;
 int chanceToMoveLeft = 55;
 int chanceToMoveRight = 45;
-int chanceToJump = 8;
+int chanceToJump = 3;
 //why am I doing this twice?
 int frameToWaitBefore = 10;
 int frameToWaitCount = 0;
@@ -153,6 +160,7 @@ int frameCount = 0;
 
 void init();
 void titleScreen();
+void modeSelect(int cursorInd);
 void loadGameplay();
 void gameCountdown();
 void setupPlayField();
@@ -199,7 +207,10 @@ int main()
 		{
 			if(hitFreeze == FALSE)
 			{
-				aiControlled();
+				if(singlePlayer)
+				{
+					aiControlled();
+				}
 				countFrames();
 				scrollBackground();
 				//Updates Sprites Position / Animation Frame
@@ -259,29 +270,62 @@ void titleScreen()
 	VDP_setPaletteColor(0, RGB24_TO_VDPCOLOR(0x00000));
 	VDP_setPalette(PAL2, logo.palette->data);
 	logoSpr = SPR_addSprite(&logo, (screenWidth / 2) - 64, 20, TILE_ATTR(PAL2, 0, FALSE, FALSE));
-	pressStartSpr = SPR_addSprite(&start, (screenWidth / 2) - 64, 168, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	pressStartSpr = SPR_addSprite(&start, (screenWidth / 2) - 64, screenHeight-32, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	cursorSpr = SPR_addSprite(&cursor, (screenWidth / 2) - 56, modeSelected[0], TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	player1Spr = SPR_addSprite(&player1Text, (screenWidth / 2) - 32, modeSelected[0], TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	pressStartSpr = SPR_addSprite(&player2Text, (screenWidth / 2) - 32, modeSelected[1], TILE_ATTR(PAL2, 0, FALSE, FALSE));
 	SPR_update();
 }
 
-	void loadGameplay()
+void modeSelect(int cursorInd)
+{
+	if (cursorInd == -1)
 	{
-		SPR_releaseSprite(logoSpr);
-		SPR_releaseSprite(pressStartSpr);
-		XGM_stopPlay();
-		gameplayMusic();
-		atTitleScreen = FALSE;
-		VDP_clearPlan(PLAN_A, TRUE);
-		VDP_clearPlan(PLAN_B, TRUE);
-		setupPlayField();
-		setupPlayers();
-		VDP_setPalette(PAL2, countDown.palette->data);
-		countDownSprite = SPR_addSprite(&countDown, (screenWidth / 2) - 32, 64, TILE_ATTR(PAL2, 0, FALSE, FALSE));
-		players[0].scoreSprite = SPR_addSprite(&numbers, 10, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
-		SPR_setAnim(players[0].scoreSprite, 0);
-		players[1].scoreSprite = SPR_addSprite(&numbers, 286, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
-		SPR_setAnim(players[1].scoreSprite, 0);
-		SPR_setAnim(countDownSprite, 0);
-		preGameCountdown = TRUE;
+		cursorPos++;
+		if(cursorPos == 2)
+		{
+			cursorPos = 0;
+		}
+	}
+	else if(cursorInd == 1)
+	{
+		cursorPos--;
+		if (cursorPos == -1)
+		{
+			cursorPos = 1;
+		}
+	}
+	if(cursorPos == 1)
+	{
+		singlePlayer = FALSE;
+	}else
+	{
+		singlePlayer = TRUE;
+	}
+	
+	SPR_setPosition(cursorSpr, (screenWidth / 2) - 56, modeSelected[cursorPos]);
+	SPR_update();
+}
+
+void loadGameplay()
+{
+	SPR_releaseSprite(logoSpr);
+	SPR_releaseSprite(pressStartSpr);
+	XGM_stopPlay();
+	gameplayMusic();
+	atTitleScreen = FALSE;
+	VDP_clearPlan(PLAN_A, TRUE);
+	VDP_clearPlan(PLAN_B, TRUE);
+	setupPlayField();
+	setupPlayers();
+	VDP_setPalette(PAL2, countDown.palette->data);
+	countDownSprite = SPR_addSprite(&countDown, (screenWidth / 2) - 32, 64, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	players[0].scoreSprite = SPR_addSprite(&numbers, 10, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	SPR_setAnim(players[0].scoreSprite, 0);
+	players[1].scoreSprite = SPR_addSprite(&numbers, 286, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	SPR_setAnim(players[1].scoreSprite, 0);
+	SPR_setAnim(countDownSprite, 0);
+	preGameCountdown = TRUE;
 }
 
 void gameCountdown()
@@ -1113,6 +1157,10 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 		if (state & BUTTON_UP)
 		{
 			players[0].verticalNormal = 1;
+			if(gameOn == FALSE)
+			{
+				modeSelect(1);
+			}
 		}
 		else
 		{
@@ -1127,6 +1175,10 @@ static void myJoyHandler(u16 joy, u16 changed, u16 state)
 		if (state & BUTTON_DOWN)
 		{
 			players[0].verticalNormal = -1;
+			if (gameOn == FALSE)
+			{
+				modeSelect(-1);
+			}
 		}
 		else
 		{
