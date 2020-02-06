@@ -273,7 +273,7 @@ void titleScreen()
 	pressStartSpr = SPR_addSprite(&start, (screenWidth / 2) - 64, screenHeight-32, TILE_ATTR(PAL2, 0, FALSE, FALSE));
 	cursorSpr = SPR_addSprite(&cursor, (screenWidth / 2) - 56, modeSelected[0], TILE_ATTR(PAL2, 0, FALSE, FALSE));
 	player1Spr = SPR_addSprite(&player1Text, (screenWidth / 2) - 32, modeSelected[0], TILE_ATTR(PAL2, 0, FALSE, FALSE));
-	pressStartSpr = SPR_addSprite(&player2Text, (screenWidth / 2) - 32, modeSelected[1], TILE_ATTR(PAL2, 0, FALSE, FALSE));
+	player2Spr = SPR_addSprite(&player2Text, (screenWidth / 2) - 32, modeSelected[1], TILE_ATTR(PAL2, 0, FALSE, FALSE));
 	SPR_update();
 }
 
@@ -309,15 +309,16 @@ void modeSelect(int cursorInd)
 
 void loadGameplay()
 {
-	SPR_releaseSprite(logoSpr);
-	SPR_releaseSprite(pressStartSpr);
+	SPR_setVisibility(pressStartSpr, HIDDEN);
+	SPR_setVisibility(player1Spr, HIDDEN);
+	SPR_setVisibility(player2Spr, HIDDEN);
+	SPR_setVisibility(logoSpr, HIDDEN);
+
 	XGM_stopPlay();
 	gameplayMusic();
 	atTitleScreen = FALSE;
 	VDP_clearPlan(PLAN_A, TRUE);
 	VDP_clearPlan(PLAN_B, TRUE);
-	setupPlayField();
-	setupPlayers();
 	VDP_setPalette(PAL2, countDown.palette->data);
 	countDownSprite = SPR_addSprite(&countDown, (screenWidth / 2) - 32, 64, TILE_ATTR(PAL2, 0, FALSE, FALSE));
 	players[0].scoreSprite = SPR_addSprite(&numbers, 10, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
@@ -325,6 +326,8 @@ void loadGameplay()
 	players[1].scoreSprite = SPR_addSprite(&numbers, 286, 10, TILE_ATTR(PAL2, 0, FALSE, FALSE));
 	SPR_setAnim(players[1].scoreSprite, 0);
 	SPR_setAnim(countDownSprite, 0);
+	setupPlayField();
+	setupPlayers();
 	preGameCountdown = TRUE;
 }
 
@@ -362,6 +365,7 @@ void setupPlayField()
 
 	mapBackground = unpackMap(BGBuildings.map, NULL);
 	//Background art is using Palette 3
+	VDP_setMapEx(PLAN_A, mapBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, TILE_USERINDEX), 0, 0, 0, 0, 64, 28);
 	VDP_setMapEx(PLAN_A, mapBackground, TILE_ATTR_FULL(PAL3, 0, FALSE, FALSE, TILE_USERINDEX), 0, 0, 0, 0, 64, 28);
 
 	cloudBackground = unpackMap(BGClouds.map, NULL);
