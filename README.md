@@ -61,7 +61,7 @@ C Button: Deflect
 ## Credits
 [Clare Byrne](https://twitter.com/clare_3c) - Art
 
-[Shane O'Brien](https://twitter.com/TheShaneOBrien) - Programming
+[Shane O'Brien](https://twitter.com/TheShaneOBrien) - Programming, Game Design
 
-[Padraig O'Conner](https://twitter.com/Terra_corrupt) - Music, Sound, Programming
+[Padraig O'Conner](https://twitter.com/Terra_corrupt) - Music, Sound, Programming, Game Design, Making the game feel real good
 
